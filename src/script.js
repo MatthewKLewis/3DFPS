@@ -54,10 +54,10 @@ const loader = new THREE.TextureLoader();
 loader.crossOrigin = '';
 
 //Basic Colors
-const mWater = new THREE.MeshBasicMaterial({ map: loader.load('assets/images/water.png') });
-const mCobble = new THREE.MeshBasicMaterial({ map: loader.load('assets/images/tile.png') });
-// const mWater = new THREE.MeshLambertMaterial({ color: 'green' });
-// const mCobble = new THREE.MeshLambertMaterial({ color: 'blue' });
+//const mWater = new THREE.MeshBasicMaterial({ map: loader.load('assets/images/water.png') });
+//const mCobble = new THREE.MeshBasicMaterial({ map: loader.load('assets/images/tile.png') });
+const mWater = new THREE.MeshLambertMaterial({ color: 'green' });
+const mCobble = new THREE.MeshLambertMaterial({ color: 'blue' });
 //#endregion
 
 //#region [rgba(128, 25, 25, 0.15) ] SCENERY
