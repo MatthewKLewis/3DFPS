@@ -216,7 +216,7 @@ scene.background = new THREE.Color(0x113322)
 * This section sets up audios to play
 */
 
-const gunshot = new Audio('./assets/audios/gunshot.mp3')
+const gunshot = new Audio('./assets/audios/gunshot_short.mp3')
 const bkgMusic = new Audio('./assets/audios/Flossed In Paradise - In The No.mp3')
 gunshot.volume = 0.25;
 bkgMusic.volume = 0.05;
@@ -464,10 +464,10 @@ const tick = () => {
     //Call tick again after this
     window.requestAnimationFrame(tick)
 
-    //Generate Overlay
+    // //Generate Overlay
     generateGunImage();
-    //generateCommsText();
     generateHUDText(elapsedTime);
+    //generateCommsText();
 
     //This will be a number of milliseconds slower than elapsed time at the beginning of next frame.
     timeOfLastFrame = elapsedTime
