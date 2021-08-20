@@ -80,6 +80,9 @@ cobbleMap.magFilter = THREE.NearestFilter;
 const mWater = new THREE.MeshBasicMaterial({ map: waterMap });
 const mCobble = new THREE.MeshBasicMaterial({ map: cobbleMap });
 
+//Gun "Sprites"
+let gunSpriteURLS = ['./assets/images/pistol_1.png', './assets/images/shotgun_1.png', './assets/images/launcher_1.png']
+
 //Monster Sprites
 let monsterSpriteMaterials = new Map()
 let monsterSpriteURLS = ['monster']
@@ -108,6 +111,8 @@ for (let i = 0; i < effectSpriteURLS.length; i++) {
 /*  
 * This section sets up the objects to display in the scene.
 */
+let CHUNK_SIDE_LENGTH = 10;
+var chunksMade = new Map();
 class Chunk {
     constructor(x, z, tileArray) {
         this.x = x
@@ -135,8 +140,6 @@ class Tile {
         this.mesh.position.y = y;
     }
 }
-let CHUNK_SIDE_LENGTH = 10;
-var chunksMade = new Map();
 function generateFloorChunkIndex() {
     var tempIndex = []
     for (let i = 0; i < (CHUNK_SIDE_LENGTH * CHUNK_SIDE_LENGTH); i++) {
@@ -227,7 +230,7 @@ directionalLight.position.z = 6;
 directionalLight.position.y = 3;
 scene.add(directionalLight)
 
-let fog = new THREE.FogExp2(0x113322, 0.08)
+let fog = new THREE.FogExp2(0x113322, 0.1)
 scene.fog = fog;
 scene.background = new THREE.Color(0x113322)
 //#endregion
@@ -238,8 +241,10 @@ scene.background = new THREE.Color(0x113322)
 */
 
 const gunshot = new Audio('./assets/audios/gunshot_short.mp3')
+const gunclick = new Audio('./assets/audios/gunclick.mp3')
 const bkgMusic = new Audio('./assets/audios/Flossed In Paradise - In The No.mp3')
 gunshot.volume = 0.25;
+gunclick.volume = 0.25;
 bkgMusic.volume = 0.05;
 
 //#endregion
@@ -324,13 +329,13 @@ const sizes = {
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
 const controls = new PointerLockControls(camera, document.body);
 camera.position.x = 4.5
-camera.position.y = 1.5
+camera.position.y = 1.0
 camera.position.z = 4.5
-camera.lookAt(4.5, 1.5, 5.5)
+camera.lookAt(4.5, 1.2, 5.5)
 scene.add(camera)
 
 // Camera Custom Properties
-camera.speed = 0.05;
+camera.speed = 0.04;
 camera.health = 100;
 camera.canMove = false;
 camera.ducking = false;
@@ -396,11 +401,11 @@ window.addEventListener('keypress', (e) => {
     if (e.key == 'e') {
         console.log('use');
     } else if (e.key == '1') {
-        console.log('switch to weapon 1')
+        camera.currentGun = 0
     } else if (e.key == '2') {
-        console.log('switch to weapon 2')
+        camera.currentGun = 1
     } else if (e.key == '3') {
-        console.log('switch to weapon 3')
+        camera.currentGun = 2
     }
 })
 window.addEventListener('resize', () => {
@@ -429,7 +434,7 @@ document.body.addEventListener('click', () => {
                 }
             }
         } else {
-            console.log('click')
+            gunclick.play()
         }
     }
 })
@@ -463,9 +468,9 @@ function acceptPlayerInputs() {
         if (camera.currentChunk.tileArray[i].mesh.position.x == Math.floor(camera.position.x + .5) && camera.currentChunk.tileArray[i].mesh.position.z == Math.floor(camera.position.z + .5)) {
             camera.currentTile = camera.currentChunk.tileArray[i]
             if (!camera.ducking) {
-                camera.position.y = camera.currentChunk.tileArray[i].mesh.position.y + 1.5
-            } else {
                 camera.position.y = camera.currentChunk.tileArray[i].mesh.position.y + 1
+            } else {
+                camera.position.y = camera.currentChunk.tileArray[i].mesh.position.y + .6
             }
         }
     }
@@ -544,10 +549,10 @@ function generateHUDText(elapsedTime) {
     }
 
     // //HEALTH AND AMMO
-    healthAmmo.innerText = camera.health + " : " + camera.guns[camera.currentGun].roundsChambered + " / " + camera.guns[0].roundsTotal
+    healthAmmo.innerText = camera.health + " : " + camera.guns[camera.currentGun].roundsChambered + " / " + camera.guns[camera.currentGun].roundsTotal
 }
 function generateGunImage() {
-    gunhand.src = './assets/images/pistol_1.png'
+    gunhand.src = gunSpriteURLS[camera.currentGun]
     gunhand.width = 400;
     gunhand.heigh = 600;
 }
