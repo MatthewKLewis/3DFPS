@@ -251,6 +251,7 @@ bkgMusic.volume = 0.05;
 * This section sets up the camera and player.
 */
 let monsters = []
+let sprites = []
 function createCreatureSprite(name, x, y, z) {
     var tempSprite = new THREE.Sprite(monsterSpriteMaterials.get(name));
     tempSprite.position.x = x;
@@ -267,7 +268,8 @@ function createEffectSprite(name, x, y, z) {
     tempSprite.position.x = x;
     tempSprite.position.y = y;
     tempSprite.position.z = z;
-    tempSprite.timer = 5
+    tempSprite.timer = 0
+    tempSprite.lifeSpan = 20
     return tempSprite;
 }
 function worldMoves() {
@@ -290,6 +292,13 @@ function worldMoves() {
                 default:
                     break;
             }
+        }
+    }
+    for (let i = 0; i < sprites.length; i++) {
+        sprites[i].timer++;
+        if (sprites[i].timer == sprites[i].lifeSpan) {
+            scene.remove(sprites[i])
+            sprites.splice(i, 1);
         }
     }
 }
@@ -321,7 +330,7 @@ camera.lookAt(4.5, 1.5, 5.5)
 scene.add(camera)
 
 // Camera Custom Properties
-camera.speed = 0.1;
+camera.speed = 0.05;
 camera.health = 100;
 camera.canMove = false;
 camera.ducking = false;
@@ -409,22 +418,16 @@ document.body.addEventListener('click', () => {
             camera.guns[camera.currentGun].roundsChambered--;
             rayCaster.setFromCamera(mousePosition, camera);
             const intersects = rayCaster.intersectObjects(scene.children);
-            if (intersects[0].object.type == "Sprite") {
-                intersects[0].object.health--;
-                console.log(intersects);
-                scene.add(createEffectSprite('blood1', intersects[0].point.x, intersects[0].point.y, intersects[0].point.z,));
-
-            } else if (intersects[0].object.type == "Mesh") {
-                console.log('kerang')
+            if (intersects[0]) {
+                if (intersects[0].object.type == "Sprite") {
+                    intersects[0].object.health--;
+                    var blood = createEffectSprite('blood1', intersects[0].point.x, intersects[0].point.y, intersects[0].point.z)
+                    sprites.push(blood)
+                    scene.add(blood);
+                } else if (intersects[0].object.type == "Mesh") {
+                    console.log('kerang')
+                }
             }
-            // for (let i = 0; i < intersects.length; i++) {
-            //     if (intersects[i].object.type == "Sprite") {
-            //         console.log(intersects[i].object);
-            //         //scene.remove(intersects[i].object);
-            //     } else if (intersects[i].object.type == "Mesh") {
-            //         console.log('kerang')
-            //     }
-            // }
         } else {
             console.log('click')
         }
