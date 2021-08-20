@@ -71,6 +71,7 @@ loader.crossOrigin = '';
 
 function createSprite(url, x, y, z) {
     var tempMap = new THREE.TextureLoader().load(url);
+    tempMap.flipX = false;
     tempMap.magFilter = THREE.NearestFilter;
     tempMap.minFilter = THREE.LinearMipMapLinearFilter;
     var tempMat = new THREE.SpriteMaterial({ map: tempMap });
