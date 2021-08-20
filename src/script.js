@@ -25,6 +25,7 @@ const scene = new THREE.Scene()
 const VOWELS = "aeiou".split('')
 const CONSONANTS = "bcdfghjklmnpqrstvwxyz".split('')
 var SYLLABLES = []
+const NAMES = ["Adam", "Alex", "Aaron", "Ben", "Carl", "Dan", "David", "Edward", "Fred", "Frank", "George", "Hal", "Hank", "Ike", "John", "Jack", "Joe", "Larry", "Monte", "Matthew", "Mark", "Nathan", "Otto", "Paul", "Peter", "Roger", "Roger", "Steve", "Thomas", "Tim", "Ty", "Victor", "Walter"]
 for (let i = 0; i < CONSONANTS.length; i++) {
     for (let j = 0; j < VOWELS.length; j++) {
         SYLLABLES.push(CONSONANTS[i] + VOWELS[j])
@@ -36,6 +37,9 @@ function getAbjadWord(syllables) {
         tempString += SYLLABLES[Math.floor((Math.random() * SYLLABLES.length) + 1)]
     }
     return tempString;
+}
+function getName() {
+    return NAMES[Math.floor((Math.random() * NAMES.length) + 1)];
 }
 const story = [
     "You'll be able to carry yourself through ego death.",
@@ -54,10 +58,10 @@ const loader = new THREE.TextureLoader();
 loader.crossOrigin = '';
 
 //Basic Colors
-//const mWater = new THREE.MeshBasicMaterial({ map: loader.load('assets/images/water.png') });
-//const mCobble = new THREE.MeshBasicMaterial({ map: loader.load('assets/images/tile.png') });
-const mWater = new THREE.MeshLambertMaterial({ color: 'green' });
-const mCobble = new THREE.MeshLambertMaterial({ color: 'blue' });
+const mWater = new THREE.MeshBasicMaterial({ map: loader.load('assets/images/water1.png') });
+const mCobble = new THREE.MeshBasicMaterial({ map: loader.load('assets/images/tile1.png') });
+//const mWater = new THREE.MeshLambertMaterial({ color: 'green' });
+//const mCobble = new THREE.MeshLambertMaterial({ color: 'blue' });
 //#endregion
 
 //#region [rgba(128, 25, 25, 0.15) ] SCENERY
@@ -70,6 +74,7 @@ class Chunk {
         this.z = z
         this.tileArray = tileArray
         this.name = getAbjadWord(4);
+        //this.name = getName()
     }
 }
 class Tile {
@@ -101,28 +106,34 @@ function generateFloorChunkIndex() {
     return tempIndex;
 }
 function addChunk(xChunk, zChunk) {
-    var floorIndex = generateFloorChunkIndex();
-    var floorGameObjectArray = []
+
     var xNewChunkOrigin = xChunk * CHUNK_SIDE_LENGTH;
     var zNewChunkOrigin = zChunk * CHUNK_SIDE_LENGTH;
-    for (let i = 0; i < floorIndex.length; i++) {
-        if (floorIndex[i] == 1) {
-            var tempFloorTile = new Tile((i % CHUNK_SIDE_LENGTH) + xNewChunkOrigin, (Math.floor(i / CHUNK_SIDE_LENGTH)) + zNewChunkOrigin, 0, i, 'ground', 0, 0)
-            floorGameObjectArray.push(tempFloorTile);
-            scene.add(tempFloorTile.mesh)
-        } else {
-            var tempFloorTile = new Tile((i % CHUNK_SIDE_LENGTH) + xNewChunkOrigin, (Math.floor(i / CHUNK_SIDE_LENGTH)) + zNewChunkOrigin, -0.1, i, 'water', 0, 0)
-            floorGameObjectArray.push(tempFloorTile);
-            scene.add(tempFloorTile.mesh)
-        }
-    }
-    // let tempPointLight = new THREE.PointLight(0xffffff, 0.15)
-    // tempPointLight.position.x = (xNewChunkOrigin);
-    // tempPointLight.position.z = (zNewChunkOrigin);
-    // tempPointLight.position.y = 3;
-    // scene.add(tempPointLight)
 
-    chunksMade.set(`${xChunk},${zChunk}`, new Chunk(xChunk, zChunk, floorGameObjectArray));
+    if (chunksMade.get(`${xChunk},${zChunk}`)) {
+        var existingTileArray = chunksMade.get(`${xChunk},${zChunk}`).tileArray
+        for (let i = 0; i < existingTileArray.length; i++) {
+            scene.add(existingTileArray[i].mesh)
+        }
+    } else {
+        var floorIndex = generateFloorChunkIndex();
+        var floorGameObjectArray = []
+
+        for (let i = 0; i < floorIndex.length; i++) {
+            if (floorIndex[i] == 1) {
+                var tempFloorTile = new Tile((i % CHUNK_SIDE_LENGTH) + xNewChunkOrigin, (Math.floor(i / CHUNK_SIDE_LENGTH)) + zNewChunkOrigin, Math.random() / 10, i, 'ground', 0, 0)
+                floorGameObjectArray.push(tempFloorTile);
+                scene.add(tempFloorTile.mesh)
+            } else {
+                var tempFloorTile = new Tile((i % CHUNK_SIDE_LENGTH) + xNewChunkOrigin, (Math.floor(i / CHUNK_SIDE_LENGTH)) + zNewChunkOrigin, -0.1, i, 'water', 0, 0)
+                floorGameObjectArray.push(tempFloorTile);
+                scene.add(tempFloorTile.mesh)
+            }
+        }
+        chunksMade.set(`${xChunk},${zChunk}`, new Chunk(xChunk, zChunk, floorGameObjectArray));
+    }
+
+
 }
 function removeChunk(xChunk, zChunk) {
     var chunkToDelete = chunksMade.get(`${xChunk},${zChunk}`);
@@ -130,7 +141,6 @@ function removeChunk(xChunk, zChunk) {
         scene.remove(chunkToDelete.tileArray[i].mesh);
     }
     //scene.remove(chunkToDelete.light);
-    chunksMade.delete(`${xChunk},${zChunk}`)
 }
 function addAndRemoveNeighborChunks(xChunk, zChunk, lastXChunk, lastZChunk) {
     var xDif = xChunk - lastXChunk;
@@ -168,7 +178,7 @@ function addAndRemoveNeighborChunks(xChunk, zChunk, lastXChunk, lastZChunk) {
 }
 for (let i = -1; i <= 1; i++) {
     for (let j = -1; j <= 1; j++) {
-        addChunk(i,j)
+        addChunk(i, j)
     }
 }
 let directionalLight = new THREE.AmbientLight(0xffffff, 0.5)
@@ -177,9 +187,21 @@ directionalLight.position.z = 6;
 directionalLight.position.y = 3;
 scene.add(directionalLight)
 
-let fog = new THREE.FogExp2(0x111111, 0.18)
+let fog = new THREE.FogExp2(0x114422, 0.08)
 scene.fog = fog;
-scene.background = new THREE.Color(0x111111)
+scene.background = new THREE.Color(0x114422)
+//#endregion
+
+//#region [rgba(128, 40, 128, 0.15) ] AUDIO
+/*  
+* This section sets up audios to play
+*/
+
+const gunshot = new Audio('./assets/audios/gunshot.mp3')
+const bkgMusic = new Audio('./assets/audios/Flossed In Paradise - In The No.mp3')
+gunshot.volume = 0.25;
+bkgMusic.volume = 0.05;
+
 //#endregion
 
 // ----------------------------MVC-------------------------------- //
@@ -213,6 +235,7 @@ camera.speed = 0.1;
 camera.health = 100;
 camera.canMove = false;
 camera.currentChunk = 'Unknown'
+camera.currentTile = 0
 
 // Control Properties
 let W_PRESSED = false;
@@ -261,10 +284,14 @@ window.addEventListener('resize', () => {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 })
 document.body.addEventListener('click', () => {
-    console.log('bang')
+    if (camera.canMove) {
+        console.log('bang')
+        gunshot.play()
+    }
 })
 pointerLock.addEventListener('click', () => {
     controls.lock()
+    bkgMusic.play()
 })
 controls.addEventListener('lock', function () {
     pointerLock.style.display = 'none';
@@ -284,6 +311,13 @@ function acceptPlayerInputs() {
         addAndRemoveNeighborChunks(curChunkX, curChunkZ, camera.currentChunk.x, camera.currentChunk.z);
     }
     camera.currentChunk = chunksMade.get(`${Math.floor((camera.position.x + 0.5) / CHUNK_SIDE_LENGTH)},${Math.floor((camera.position.z + 0.5) / CHUNK_SIDE_LENGTH)}`)
+    camera.currentTile = [camera.currentChunk.tileArray[0].mesh.position.x, camera.currentChunk.tileArray[0].mesh.position.z]
+    for (let i = 0; i < camera.currentChunk.tileArray.length; i++) {
+        if (camera.currentChunk.tileArray[i].mesh.position.x == Math.floor(camera.position.x + .5) && camera.currentChunk.tileArray[i].mesh.position.z == Math.floor(camera.position.z + .5)) {
+            camera.currentTile = camera.currentChunk.tileArray[i]
+            camera.position.y = camera.currentChunk.tileArray[i].mesh.position.y + 1.5
+        }       
+    }
 
     if (camera.canMove) {
         if (W_PRESSED) {
@@ -339,6 +373,7 @@ function generateHUDText(elapsedTime) {
     stats.innerText += "Position: " + camera.position.x.toFixed(3) + " " + camera.position.y.toFixed(3) + " " + camera.position.z.toFixed(3) + " " + "\n"
     if (camera.currentChunk) {
         stats.innerText += "Current Chunk: " + camera.currentChunk.name + " (" + camera.currentChunk.x + ", " + camera.currentChunk.z + ") \n"
+        stats.innerText += "Current Tile Height: " + camera.currentTile.mesh.position.y + "\n"
     }
 }
 function generateCommsText() {
@@ -379,7 +414,7 @@ const tick = () => {
 
     //Generate Overlay Text
     //generateCommsText();
-    //generateHUDText(elapsedTime);
+    generateHUDText(elapsedTime);
 
     //This will be a number of milliseconds slower than elapsed time at the beginning of next frame.
     timeOfLastFrame = elapsedTime
