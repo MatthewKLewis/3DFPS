@@ -58,10 +58,19 @@ const loader = new THREE.TextureLoader();
 loader.crossOrigin = '';
 
 //Basic Colors
-const mWater = new THREE.MeshBasicMaterial({ map: loader.load('assets/images/water1.png') });
-const mCobble = new THREE.MeshBasicMaterial({ map: loader.load('assets/images/tile1.png') });
+var waterMap = loader.load('assets/images/water2.png')
+var cobbleMap = loader.load('assets/images/tile2.png')
+waterMap.magFilter = THREE.NearestFilter;
+cobbleMap.magFilter = THREE.NearestFilter;
+const mWater = new THREE.MeshBasicMaterial({ map: waterMap });
+const mCobble = new THREE.MeshBasicMaterial({ map: cobbleMap });
 //const mWater = new THREE.MeshLambertMaterial({ color: 'green' });
 //const mCobble = new THREE.MeshLambertMaterial({ color: 'blue' });
+
+//Monster Materials
+const monsterMap = new THREE.TextureLoader().load('assets/images/tile2.png');
+
+
 //#endregion
 
 //#region [rgba(128, 25, 25, 0.15) ] SCENERY
@@ -187,9 +196,9 @@ directionalLight.position.z = 6;
 directionalLight.position.y = 3;
 scene.add(directionalLight)
 
-let fog = new THREE.FogExp2(0x114422, 0.08)
+let fog = new THREE.FogExp2(0x113322, 0.08)
 scene.fog = fog;
-scene.background = new THREE.Color(0x114422)
+scene.background = new THREE.Color(0x113322)
 //#endregion
 
 //#region [rgba(128, 40, 128, 0.15) ] AUDIO
@@ -291,7 +300,7 @@ document.body.addEventListener('click', () => {
 })
 pointerLock.addEventListener('click', () => {
     controls.lock()
-    bkgMusic.play()
+    //bkgMusic.play()
 })
 controls.addEventListener('lock', function () {
     pointerLock.style.display = 'none';
@@ -361,10 +370,10 @@ const renderPass = new RenderPass(scene, camera)
 //     aperture: .0125,
 //     maxblur: 0.01
 // });
-const glitchPass = new GlitchPass(scene, camera);
+//const glitchPass = new GlitchPass(scene, camera);
 const composer = new EffectComposer(renderer)
 composer.addPass(renderPass)
-//composer.addPass( glitchPass );
+//composer.addPass(glitchPass);
 
 renderer.setSize(sizes.width, sizes.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
