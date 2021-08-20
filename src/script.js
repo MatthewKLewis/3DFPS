@@ -76,8 +76,28 @@ waterMap.magFilter = THREE.NearestFilter;
 cobbleMap.magFilter = THREE.NearestFilter;
 const mWater = new THREE.MeshBasicMaterial({ map: waterMap });
 const mCobble = new THREE.MeshBasicMaterial({ map: cobbleMap });
-//const mWater = new THREE.MeshLambertMaterial({ color: 'green' });
-//const mCobble = new THREE.MeshLambertMaterial({ color: 'blue' });
+
+//Monster Sprites
+let monsterSpriteMaterials = new Map()
+let monsterSpriteURLS = ['monster']
+for (let i = 0; i < monsterSpriteURLS.length; i++) {
+    var tempMap = new THREE.TextureLoader().load(`assets/images/${monsterSpriteURLS[i]}.png`);
+    tempMap.magFilter = THREE.NearestFilter;
+    tempMap.minFilter = THREE.LinearMipMapLinearFilter;
+    var tempMat = new THREE.SpriteMaterial({ map: tempMap });
+    monsterSpriteMaterials.set(monsterSpriteURLS[i], tempMat);
+}
+
+//Effect Sprites
+let effectSpriteMaterials = new Map()
+let effectSpriteURLS = ['blood1']
+for (let i = 0; i < effectSpriteURLS.length; i++) {
+    var tempMap = new THREE.TextureLoader().load(`assets/images/${effectSpriteURLS[i]}.png`);
+    tempMap.magFilter = THREE.NearestFilter;
+    tempMap.minFilter = THREE.LinearMipMapLinearFilter;
+    var tempMat = new THREE.SpriteMaterial({ map: tempMap });
+    effectSpriteMaterials.set(effectSpriteURLS[i], tempMat);
+}
 
 //#endregion
 
@@ -228,19 +248,23 @@ bkgMusic.volume = 0.05;
 * This section sets up the camera and player.
 */
 let monsters = []
-function createSprite(url, x, y, z) {
-    var tempMap = new THREE.TextureLoader().load(url);
-    tempMap.flipX = false;
-    tempMap.magFilter = THREE.NearestFilter;
-    tempMap.minFilter = THREE.LinearMipMapLinearFilter;
-    var tempMat = new THREE.SpriteMaterial({ map: tempMap });
-    var tempSprite = new THREE.Sprite(tempMat);
+function createCreatureSprite(name, x, y, z) {
+    var tempSprite = new THREE.Sprite(monsterSpriteMaterials.get(name));
     tempSprite.position.x = x;
     tempSprite.position.y = y;
     tempSprite.position.z = z;
     tempSprite.name = getName()
     tempSprite.health = 20
     tempSprite.status = "idle"
+    return tempSprite;
+}
+function createEffectSprite(name, x, y, z) {
+    var tempSprite = new THREE.Sprite(effectSpriteMaterials.get(name));
+    var tempSprite = new THREE.Sprite(tempMat);
+    tempSprite.position.x = x;
+    tempSprite.position.y = y;
+    tempSprite.position.z = z;
+    tempSprite.timer = 5
     return tempSprite;
 }
 function worldMoves() {
@@ -269,9 +293,9 @@ function worldMoves() {
 
 //Monsters
 for (let i = 0; i < 5; i++) {
-    const sampleEnemy = createSprite('assets/images/monster.png', randBetween(10, 20), 1, randBetween(10, 20));
+    const sampleEnemy = createCreatureSprite('monster', randBetween(10, 20), 1, randBetween(10, 20));
     monsters.push(sampleEnemy)
-    scene.add(sampleEnemy);
+    scene.add(sampleEnemy)
 }
 
 //#endregion
@@ -379,8 +403,9 @@ document.body.addEventListener('click', () => {
             const intersects = rayCaster.intersectObjects(scene.children);
             if (intersects[0].object.type == "Sprite") {
                 intersects[0].object.health--;
-                //console.log(intersects[0].object);
-                //scene.remove(intersects[0].object);
+                console.log(intersects);
+                scene.add(createEffectSprite('blood1', intersects[0].point.x, intersects[0].point.y, intersects[0].point.z, ));
+
             } else if (intersects[0].object.type == "Mesh") {
                 console.log('kerang')
             }
