@@ -72,7 +72,10 @@ const story = [
 const loader = new THREE.TextureLoader();
 loader.crossOrigin = '';
 
-//Basic Colors
+//Basic Color Materials
+const mRed = new THREE.MeshBasicMaterial({color: new THREE.Color('red')})
+
+//Textured Materials
 var waterMap = loader.load('assets/images/water2.png')
 var cobbleMap = loader.load('assets/images/tile2.png')
 waterMap.magFilter = THREE.NearestFilter;
@@ -219,20 +222,33 @@ function addAndRemoveNeighborChunks(xChunk, zChunk, lastXChunk, lastZChunk) {
         removeChunk(xChunk + 1, zChunk + 2)
     }
 }
+// Add the starting 9 chunks
 for (let i = -1; i <= 1; i++) {
     for (let j = -1; j <= 1; j++) {
         addChunk(i, j)
     }
 }
+
+//Add light
 let directionalLight = new THREE.AmbientLight(0xffffff, 0.5)
 directionalLight.position.x = 5;
 directionalLight.position.z = 6;
 directionalLight.position.y = 3;
 scene.add(directionalLight)
 
+//Add Fog
 let fog = new THREE.FogExp2(0x113322, 0.1)
 scene.fog = fog;
 scene.background = new THREE.Color(0x113322)
+
+//Add a button
+let buttonGeo = new THREE.BoxBufferGeometry(.2, .2, .2)
+let buttonMesh = new THREE.Mesh(buttonGeo, mRed)
+buttonMesh.position.x = 4.5
+buttonMesh.position.y = 1
+buttonMesh.position.z = 8
+scene.add(buttonMesh);
+
 //#endregion
 
 //#region [rgba(128, 40, 255, 0.15) ] AUDIO
@@ -343,9 +359,9 @@ camera.currentChunk = 'Unknown'
 camera.currentTile = 0
 camera.currentGun = 0
 camera.guns = [
-    { name: 'pistol', roundsChambered: 6, roundsPerReload: 6, roundsTotal: 30, timeLastReloaded: 0, cooldown: 400 },
-    { name: 'shotgun', roundsChambered: 2, roundsPerReload: 2, roundsTotal: 50, timeLastReloaded: 0, cooldown: 400 },
-    { name: 'rocketLauncher', roundsChambered: 1, roundsPerReload: 1, roundsTotal: 4, timeLastReloaded: 0, cooldown: 400 },
+    { name: 'pistol', damage: 1, roundsChambered: 6, roundsPerReload: 6, roundsTotal: 30, timeLastReloaded: 0, timeLastFired: 0, cooldown: 600 },
+    { name: 'shotgun', damage: 5, roundsChambered: 2, roundsPerReload: 2, roundsTotal: 50, timeLastReloaded: 0, timeLastFired: 0, cooldown: 600 },
+    { name: 'rocketLauncher', damage: 20, roundsChambered: 1, roundsPerReload: 1, roundsTotal: 4, timeLastReloaded: 0, timeLastFired: 0, cooldown: 600 },
 ]
 
 // Raycaster
@@ -399,7 +415,15 @@ window.addEventListener('keyup', (e) => {
 })
 window.addEventListener('keypress', (e) => {
     if (e.key == 'e') {
-        console.log('use');
+        if (camera.canMove) {
+            rayCaster.setFromCamera(mousePosition, camera);
+            const intersects = rayCaster.intersectObjects(scene.children);
+            if (intersects[0]) {
+                if (intersects[0].object.type == "Mesh" && intersects[0].distance < .8) {
+                    //console.log(intersects[0])
+                }
+            }
+        }
     } else if (e.key == '1') {
         camera.currentGun = 0
     } else if (e.key == '2') {
@@ -417,15 +441,16 @@ window.addEventListener('resize', () => {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 })
 document.body.addEventListener('click', () => {
-    if (camera.canMove) {
+    if (camera.canMove && Date.now() > camera.guns[camera.currentGun].timeLastFired + camera.guns[camera.currentGun].cooldown) {
         if (camera.guns[camera.currentGun].roundsChambered > 0) {
             gunshot.play()
             camera.guns[camera.currentGun].roundsChambered--;
             rayCaster.setFromCamera(mousePosition, camera);
+            camera.guns[camera.currentGun].timeLastFired = Date.now()
             const intersects = rayCaster.intersectObjects(scene.children);
             if (intersects[0]) {
                 if (intersects[0].object.type == "Sprite") {
-                    intersects[0].object.health--;
+                    intersects[0].object.health -= camera.guns[camera.currentGun].damage;
                     var blood = createEffectSprite('blood1', intersects[0].point.x, intersects[0].point.y, intersects[0].point.z)
                     sprites.push(blood)
                     scene.add(blood);
@@ -595,7 +620,7 @@ const tick = () => {
     // //Generate Overlay
     generateGunImage();
     generateHUDText(elapsedTime);
-    generateCommsText();
+    //generateCommsText();
 
     //This will be a number of milliseconds slower than elapsed time at the beginning of next frame.
     timeOfLastFrame = elapsedTime
