@@ -12,6 +12,7 @@ const stats = document.querySelector('#stats')
 const popup = document.querySelector('#popup')
 const icon = document.querySelector('#icon')
 const comms = document.querySelector('#comms')
+const gunhand = document.querySelector('#gunhand')
 const next = document.querySelector('#next')
 
 const scene = new THREE.Scene()
@@ -57,6 +58,16 @@ const story = [
 const loader = new THREE.TextureLoader();
 loader.crossOrigin = '';
 
+function createSprite(url, x, y, z) {
+    var tempMap = new THREE.TextureLoader().load(url);
+    var tempMat = new THREE.SpriteMaterial( { map: tempMap } );
+    var tempSprite = new THREE.Sprite( tempMat );
+    tempSprite.position.x = x;
+    tempSprite.position.y = y;
+    tempSprite.position.z = z;
+    return tempSprite;
+}
+
 //Basic Colors
 var waterMap = loader.load('assets/images/water2.png')
 var cobbleMap = loader.load('assets/images/tile2.png')
@@ -68,9 +79,8 @@ const mCobble = new THREE.MeshBasicMaterial({ map: cobbleMap });
 //const mCobble = new THREE.MeshLambertMaterial({ color: 'blue' });
 
 //Monster Materials
-const monsterMap = new THREE.TextureLoader().load('assets/images/tile2.png');
-
-
+const sampleEnemy = createSprite('assets/images/monster.png', 10, 1, 10);
+scene.add( sampleEnemy );
 //#endregion
 
 //#region [rgba(128, 25, 25, 0.15) ] SCENERY
@@ -239,10 +249,21 @@ camera.position.z = 4.5
 camera.lookAt(4.5, 1.5, 5.5)
 scene.add(camera)
 
+// // Weapon Hand
+// var gunMap = new THREE.TextureLoader().load('assets/images/pistol_1.png');
+// var gunMat = new THREE.SpriteMaterial( { map: gunMap } );
+// var gunSprite = new THREE.Sprite( gunMat );
+// gunSprite.position.x = 4.5;
+// gunSprite.position.y = 1.5;
+// gunSprite.position.z = 4.5;
+// gunSprite.parent = camera;
+// scene.add( gunSprite );
+
 // Camera Custom Properties
 camera.speed = 0.1;
 camera.health = 100;
 camera.canMove = false;
+camera.ducking = false;
 camera.currentChunk = 'Unknown'
 camera.currentTile = 0
 
@@ -252,6 +273,7 @@ let S_PRESSED = false;
 let A_PRESSED = false;
 let D_PRESSED = false;
 let E_PRESSED = false;
+let X_PRESSED = false;
 let SPACE_PRESSED = false;
 window.addEventListener('keydown', (e) => {
     if (e.key == 'w') {
@@ -264,6 +286,10 @@ window.addEventListener('keydown', (e) => {
         D_PRESSED = true;
     } else if (e.key == " ") {
         SPACE_PRESSED = true;
+    } else if (e.key == "x") {
+        X_PRESSED = true;
+    } else {
+        console.log('pressed ' + e.key)
     }
 })
 window.addEventListener('keyup', (e) => {
@@ -277,6 +303,8 @@ window.addEventListener('keyup', (e) => {
         D_PRESSED = false;
     } else if (e.key == " ") {
         SPACE_PRESSED = false;
+    } else if (e.key == "x") {
+        X_PRESSED = false;
     }
 })
 window.addEventListener('keypress', (e) => {
@@ -314,6 +342,7 @@ controls.addEventListener('unlock', function () {
 // This is a pseudo-Model class, in that it is called on every frame.
 function acceptPlayerInputs() {
 
+    // Determine current chunk and tile
     var curChunkX = chunksMade.get(`${Math.floor((camera.position.x + 0.5) / CHUNK_SIDE_LENGTH)},${Math.floor((camera.position.z + 0.5) / CHUNK_SIDE_LENGTH)}`).x
     var curChunkZ = chunksMade.get(`${Math.floor((camera.position.x + 0.5) / CHUNK_SIDE_LENGTH)},${Math.floor((camera.position.z + 0.5) / CHUNK_SIDE_LENGTH)}`).z
     if (camera.currentChunk && curChunkX != camera.currentChunk.x || curChunkZ != camera.currentChunk.z) {
@@ -321,10 +350,16 @@ function acceptPlayerInputs() {
     }
     camera.currentChunk = chunksMade.get(`${Math.floor((camera.position.x + 0.5) / CHUNK_SIDE_LENGTH)},${Math.floor((camera.position.z + 0.5) / CHUNK_SIDE_LENGTH)}`)
     camera.currentTile = [camera.currentChunk.tileArray[0].mesh.position.x, camera.currentChunk.tileArray[0].mesh.position.z]
+
+    // Postion camera based on height and ducking
     for (let i = 0; i < camera.currentChunk.tileArray.length; i++) {
         if (camera.currentChunk.tileArray[i].mesh.position.x == Math.floor(camera.position.x + .5) && camera.currentChunk.tileArray[i].mesh.position.z == Math.floor(camera.position.z + .5)) {
             camera.currentTile = camera.currentChunk.tileArray[i]
-            camera.position.y = camera.currentChunk.tileArray[i].mesh.position.y + 1.5
+            if (!camera.ducking) {
+                camera.position.y = camera.currentChunk.tileArray[i].mesh.position.y + 1.5
+            } else {
+                camera.position.y = camera.currentChunk.tileArray[i].mesh.position.y + 1
+            }
         }       
     }
 
@@ -347,9 +382,12 @@ function acceptPlayerInputs() {
         if (E_PRESSED) {
             console.log('interact')
         }
+        if (X_PRESSED) {
+            camera.ducking = true;
+        } else {
+            camera.ducking = false;
+        }
     }
-
-
 }
 //#endregion
 
@@ -384,6 +422,11 @@ function generateHUDText(elapsedTime) {
         stats.innerText += "Current Chunk: " + camera.currentChunk.name + " (" + camera.currentChunk.x + ", " + camera.currentChunk.z + ") \n"
         stats.innerText += "Current Tile Height: " + camera.currentTile.mesh.position.y + "\n"
     }
+}
+function generateGunImage() {
+    gunhand.src = './assets/images/pistol_1.png'
+    gunhand.width = 400;
+    gunhand.heigh = 600;
 }
 function generateCommsText() {
     if (camera.currentChunk && camera.canMove) {
@@ -421,7 +464,8 @@ const tick = () => {
     //Call tick again after this
     window.requestAnimationFrame(tick)
 
-    //Generate Overlay Text
+    //Generate Overlay
+    generateGunImage();
     //generateCommsText();
     generateHUDText(elapsedTime);
 

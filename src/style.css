@@ -4,6 +4,11 @@
     padding: 0;
     font-family: monospace;
     font-size: 20px;
+    -webkit-user-select: none; /* Safari */        
+    -moz-user-select: none; /* Firefox */
+    -ms-user-select: none; /* IE10+/Edge */
+    user-select: none; /* Standard */
+
 }
 
 html,
@@ -31,6 +36,14 @@ body
     border-radius: 10px;
     text-align: center;
     z-index: 100;
+}
+
+#gunhand {
+    position: fixed;
+    bottom: 0;
+    left: 42%;
+    z-index: 98;
+    filter: blur(4px);
 }
 
 #crosshair {
