@@ -21,16 +21,27 @@ body
 }
 
 #pointer-lock {
-    background-color: #333;
+    background-color: skyblue;
     position: fixed;
-    display: grid;
-    grid-template-columns: 110px 620px 100px;
-    bottom: 40%;
-    left: 40%;
-    width: 20%;
-    height: 20%;
+    bottom: 30%;
+    left: 30%;
+    width: 40%;
+    height: 40%;
     padding: 10px;
+    border-radius: 10px;
+    text-align: center;
     z-index: 100;
+}
+
+#crosshair {
+    color: white;
+    text-align: center;
+    position: fixed;
+    left: 49%;
+    bottom: 49%;
+    width: 2%;
+    height: 2%;
+    z-index: 99;
 }
 
 #stats {

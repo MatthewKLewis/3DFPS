@@ -7,6 +7,7 @@ import { GlitchPass } from 'three/examples/jsm/postprocessing/GlitchPass.js';
 import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass.js';
 
 const canvas = document.querySelector('canvas.webgl')
+const pointerLock = document.querySelector('#pointer-lock')
 const stats = document.querySelector('#stats')
 const popup = document.querySelector('#popup')
 const icon = document.querySelector('#icon')
@@ -19,9 +20,7 @@ const scene = new THREE.Scene()
 
 //#region [rgba(255, 25, 25, 0.15) ] STORY
 /*  
-* 
 * This section has NPC and STORY info
-*
 */
 const VOWELS = "aeiou".split('')
 const CONSONANTS = "bcdfghjklmnpqrstvwxyz".split('')
@@ -38,7 +37,6 @@ function getAbjadWord(syllables) {
     }
     return tempString;
 }
-var storyIndex = 0;
 const story = [
     "You'll be able to carry yourself through ego death.",
     "Sounds contradictory? It's not really a well named concept.",
@@ -50,30 +48,48 @@ const story = [
 
 //#region [rgba(25, 128, 25, 0.15) ] MATERIALS
 /*  
-* 
 * This section sets up a map for basic color materials, as well as a few textured materials.
-*
 */
 const loader = new THREE.TextureLoader();
 loader.crossOrigin = '';
 
 //Basic Colors
-const mBrown = new THREE.MeshBasicMaterial()
-const mTeal = new THREE.MeshBasicMaterial()
-const mRed = new THREE.MeshBasicMaterial()
-const mCobble = new THREE.MeshBasicMaterial({ map: loader.load('assets/images/tile.png') });
 const mWater = new THREE.MeshBasicMaterial({ map: loader.load('assets/images/water.png') });
-mBrown.color = new THREE.Color(0xffaa88)
-mTeal.color = new THREE.Color(0x00ddcca)
-mRed.color = new THREE.Color(0xff0000)
+const mCobble = new THREE.MeshBasicMaterial({ map: loader.load('assets/images/tile.png') });
+// const mWater = new THREE.MeshLambertMaterial({ color: 'green' });
+// const mCobble = new THREE.MeshLambertMaterial({ color: 'blue' });
 //#endregion
 
-//#region [rgba(128, 25, 25, 0.15) ] STATIC SCENERY
+//#region [rgba(128, 25, 25, 0.15) ] SCENERY
 /*  
-* 
 * This section sets up the objects to display in the scene.
-*
 */
+class Chunk {
+    constructor(x, z, tileArray) {
+        this.x = x
+        this.z = z
+        this.tileArray = tileArray
+        this.name = getAbjadWord(4);
+    }
+}
+class Tile {
+    constructor(x, z, y, i, type, xChunk, zChunk) {
+        this.index = i
+        this.type = type
+        this.xChunk = xChunk
+        this.zChunk = zChunk
+        if (type == 'ground') {
+            this.geometry = new THREE.BoxBufferGeometry(1, 1, 1)
+            this.mesh = new THREE.Mesh(this.geometry, mCobble)
+        } else if (type == 'water') {
+            this.geometry = new THREE.BoxGeometry(1, 1, 1)
+            this.mesh = new THREE.Mesh(this.geometry, mWater)
+        }
+        this.mesh.position.x = x;
+        this.mesh.position.z = z;
+        this.mesh.position.y = y;
+    }
+}
 let CHUNK_SIDE_LENGTH = 10;
 var chunksMade = new Map();
 function generateFloorChunkIndex() {
@@ -100,58 +116,66 @@ function addChunk(xChunk, zChunk) {
             scene.add(tempFloorTile.mesh)
         }
     }
+    // let tempPointLight = new THREE.PointLight(0xffffff, 0.15)
+    // tempPointLight.position.x = (xNewChunkOrigin);
+    // tempPointLight.position.z = (zNewChunkOrigin);
+    // tempPointLight.position.y = 3;
+    // scene.add(tempPointLight)
+
     chunksMade.set(`${xChunk},${zChunk}`, new Chunk(xChunk, zChunk, floorGameObjectArray));
 }
-class Tile {
-    constructor(x, z, y, i, type, xChunk, zChunk) {
-        this.index = i
-        this.type = type
-        this.xChunk = xChunk
-        this.zChunk = zChunk
-        if (type == 'ground') {
-            this.geometry = new THREE.BoxBufferGeometry(1, 0.1, 1)
-            this.mesh = new THREE.Mesh(this.geometry, mCobble)
-        } else if (type == 'water') {
-            this.geometry = new THREE.BoxGeometry(1, 0.1, 1)
-            this.mesh = new THREE.Mesh(this.geometry, mWater)
-        }
-        this.mesh.position.x = x;
-        this.mesh.position.z = z;
-        this.mesh.position.y = y;
+function removeChunk(xChunk, zChunk) {
+    var chunkToDelete = chunksMade.get(`${xChunk},${zChunk}`);
+    for (let i = 0; i < chunkToDelete.tileArray.length; i++) {
+        scene.remove(chunkToDelete.tileArray[i].mesh);
     }
+    //scene.remove(chunkToDelete.light);
+    chunksMade.delete(`${xChunk},${zChunk}`)
 }
-class Chunk {
-    constructor(x, z, tileArray) {
-        this.x = x
-        this.z = z
-        this.tileArray = tileArray
-        this.name = getAbjadWord(4);
+function addAndRemoveNeighborChunks(xChunk, zChunk, lastXChunk, lastZChunk) {
+    var xDif = xChunk - lastXChunk;
+    var zDif = zChunk - lastZChunk;
+    if (xDif == 1) {
+        addChunk(xChunk + 1, zChunk)
+        addChunk(xChunk + 1, zChunk - 1)
+        addChunk(xChunk + 1, zChunk + 1)
+        removeChunk(xChunk - 2, zChunk)
+        removeChunk(xChunk - 2, zChunk - 1)
+        removeChunk(xChunk - 2, zChunk + 1)
+    } else if (xDif == -1) {
+        addChunk(xChunk - 1, zChunk)
+        addChunk(xChunk - 1, zChunk - 1)
+        addChunk(xChunk - 1, zChunk + 1)
+        removeChunk(xChunk + 2, zChunk)
+        removeChunk(xChunk + 2, zChunk - 1)
+        removeChunk(xChunk + 2, zChunk + 1)
+    }
+    if (zDif == 1) {
+        addChunk(xChunk, zChunk + 1)
+        addChunk(xChunk - 1, zChunk + 1)
+        addChunk(xChunk + 1, zChunk + 1)
+        removeChunk(xChunk, zChunk - 2)
+        removeChunk(xChunk - 1, zChunk - 2)
+        removeChunk(xChunk + 1, zChunk - 2)
+    } else if (zDif == -1) {
+        addChunk(xChunk, zChunk - 1)
+        addChunk(xChunk - 1, zChunk - 1)
+        addChunk(xChunk + 1, zChunk - 1)
+        removeChunk(xChunk, zChunk + 2)
+        removeChunk(xChunk - 1, zChunk + 2)
+        removeChunk(xChunk + 1, zChunk + 2)
     }
 }
 for (let i = -1; i <= 1; i++) {
     for (let j = -1; j <= 1; j++) {
-        addChunk(i, j)
+        addChunk(i,j)
     }
 }
-console.log(chunksMade);
-console.log(chunksMade.get("0,0").name);
-//#endregion
-
-//#region [rgba(128, 128, 25, 0.15) ] LIGHTS AND FOG
-/*  
-* 
-* This section sets up the light grid to display in the scene.
-*
-*/
-let lightArray = []
-for (let i = 0; i < chunksMade.length; i++) {
-    let tempPointLight = new THREE.PointLight(0xffffff, 0.15)
-    tempPointLight.position.x = (chunksMade[i][0] * CHUNK_SIDE_LENGTH) + (CHUNK_SIDE_LENGTH / 2);
-    tempPointLight.position.z = (chunksMade[i][1] * CHUNK_SIDE_LENGTH) + (CHUNK_SIDE_LENGTH / 2);
-    tempPointLight.position.y = 2;
-    lightArray.push(tempPointLight);
-    scene.add(tempPointLight)
-}
+let directionalLight = new THREE.AmbientLight(0xffffff, 0.5)
+directionalLight.position.x = 5;
+directionalLight.position.z = 6;
+directionalLight.position.y = 3;
+scene.add(directionalLight)
 
 let fog = new THREE.FogExp2(0x111111, 0.18)
 scene.fog = fog;
@@ -162,26 +186,41 @@ scene.background = new THREE.Color(0x111111)
 
 //#region [rgba(128, 25, 128, 0.15) ] GAME OBJECTS
 /*  
-* 
 * This section sets up the camera and player.
-*
 */
-
+function worldMoves() { }
 //#endregion
 
 //#region [rgba(25, 25, 128, 0.15) ] CONTROLS (CONTROLLER)
 /*  
-* 
 * This section sets up the controls.
-*
 */
+const sizes = {
+    width: window.innerWidth,
+    height: window.innerHeight
+}
+// Camera Built-in Properties
+const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
+const controls = new PointerLockControls(camera, document.body);
+camera.position.x = 4.5
+camera.position.y = 1.5
+camera.position.z = 4.5
+camera.lookAt(4.5, 1.5, 5.5)
+scene.add(camera)
+
+// Camera Custom Properties
+camera.speed = 0.1;
+camera.health = 100;
+camera.canMove = false;
+camera.currentChunk = 'Unknown'
+
+// Control Properties
 let W_PRESSED = false;
 let S_PRESSED = false;
 let A_PRESSED = false;
 let D_PRESSED = false;
 let E_PRESSED = false;
 let SPACE_PRESSED = false;
-let PLAYER_SPEED = 0.1;
 window.addEventListener('keydown', (e) => {
     if (e.key == 'w') {
         W_PRESSED = true;
@@ -210,14 +249,8 @@ window.addEventListener('keyup', (e) => {
 })
 window.addEventListener('keypress', (e) => {
     if (e.key == 'e') {
-        storyIndex++;
-        if (storyIndex > story.length - 1) {
-            storyIndex = 0;
-        }
+        console.log('use');
     }
-})
-canvas.addEventListener('click', () => {
-    console.log('BANG!')
 })
 window.addEventListener('resize', () => {
     sizes.width = window.innerWidth
@@ -227,48 +260,59 @@ window.addEventListener('resize', () => {
     renderer.setSize(sizes.width, sizes.height)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 })
+document.body.addEventListener('click', () => {
+    console.log('bang')
+})
+pointerLock.addEventListener('click', () => {
+    controls.lock()
+})
+controls.addEventListener('lock', function () {
+    pointerLock.style.display = 'none';
+    camera.canMove = true;
+});
+controls.addEventListener('unlock', function () {
+    pointerLock.style.display = 'block';
+    camera.canMove = false;
+});
+
+// This is a pseudo-Model class, in that it is called on every frame.
 function acceptPlayerInputs() {
-    if (W_PRESSED) {
-        controls.moveForward(PLAYER_SPEED);
+
+    var curChunkX = chunksMade.get(`${Math.floor((camera.position.x + 0.5) / CHUNK_SIDE_LENGTH)},${Math.floor((camera.position.z + 0.5) / CHUNK_SIDE_LENGTH)}`).x
+    var curChunkZ = chunksMade.get(`${Math.floor((camera.position.x + 0.5) / CHUNK_SIDE_LENGTH)},${Math.floor((camera.position.z + 0.5) / CHUNK_SIDE_LENGTH)}`).z
+    if (camera.currentChunk && curChunkX != camera.currentChunk.x || curChunkZ != camera.currentChunk.z) {
+        addAndRemoveNeighborChunks(curChunkX, curChunkZ, camera.currentChunk.x, camera.currentChunk.z);
     }
-    if (S_PRESSED) {
-        controls.moveForward(-PLAYER_SPEED);
+    camera.currentChunk = chunksMade.get(`${Math.floor((camera.position.x + 0.5) / CHUNK_SIDE_LENGTH)},${Math.floor((camera.position.z + 0.5) / CHUNK_SIDE_LENGTH)}`)
+
+    if (camera.canMove) {
+        if (W_PRESSED) {
+            controls.moveForward(camera.speed);
+        }
+        if (S_PRESSED) {
+            controls.moveForward(-camera.speed);
+        }
+        if (A_PRESSED) {
+            controls.moveRight(-camera.speed);
+        }
+        if (D_PRESSED) {
+            controls.moveRight(camera.speed);
+        }
+        if (SPACE_PRESSED) {
+            console.log('jump')
+        }
+        if (E_PRESSED) {
+            console.log('interact')
+        }
     }
-    if (A_PRESSED) {
-        controls.moveRight(-PLAYER_SPEED);
-    }
-    if (D_PRESSED) {
-        controls.moveRight(PLAYER_SPEED);
-    }
-    if (SPACE_PRESSED) {
-        console.log('jump')
-    }
-    if (E_PRESSED) {
-        console.log('interact')
-    }
+
+
 }
-const sizes = {
-    width: window.innerWidth,
-    height: window.innerHeight
-}
-const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
-camera.position.x = 0
-camera.position.y = 1
-camera.position.z = 0
-camera.lookAt(0, 1, 1)
-scene.add(camera)
-const controls = new PointerLockControls(camera, document.body);
-let pointerLock = document.querySelector('#pointer-lock')
-pointerLock.addEventListener('click', () => { controls.lock() })
-controls.addEventListener('lock', function () { pointerLock.style.display = 'none'; });
-controls.addEventListener('unlock', function () { pointerLock.style.display = 'block'; });
 //#endregion
 
 //#region [rgba(25, 128, 128, 0.15) ] RENDERER (VIEW)
 /*  
-* 
 * This section sets up rendering.
-*
 */
 const renderer = new THREE.WebGLRenderer({
     canvas: canvas
@@ -291,31 +335,20 @@ composer.addPass(renderPass)
 renderer.setSize(sizes.width, sizes.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 function generateHUDText(elapsedTime) {
-    stats.innerText = "FPS: " + (1 / (elapsedTime - timeOfLastFrame)) + "\n"
+    stats.innerText = "FPS: " + (1 / (elapsedTime - timeOfLastFrame)).toFixed(0) + "\n"
     stats.innerText += "Position: " + camera.position.x.toFixed(3) + " " + camera.position.y.toFixed(3) + " " + camera.position.z.toFixed(3) + " " + "\n"
-    stats.innerText += "Look Vector: " + camera.rotation.x.toFixed(3) + " " + camera.rotation.y.toFixed(3) + " " + camera.rotation.z.toFixed(3) + " " + "\n"
-    stats.innerText += "Current Chunk: " + "\n"
-    if (W_PRESSED) {
-        stats.innerText += "Forward ."
-    }
-    if (S_PRESSED) {
-        stats.innerText += "Backward ."
-    }
-    if (A_PRESSED) {
-        stats.innerText += "Left ."
-    }
-    if (D_PRESSED) {
-        stats.innerText += "Right ."
+    if (camera.currentChunk) {
+        stats.innerText += "Current Chunk: " + camera.currentChunk.name + " (" + camera.currentChunk.x + ", " + camera.currentChunk.z + ") \n"
     }
 }
 function generateCommsText() {
-    if (camera.position.x > 2 && camera.position.z > 2) {
+    if (camera.currentChunk && camera.canMove) {
         popup.className = 'popup'
         if (icon) {
             icon.src = './assets/images/npc1.png'
         }
         if (comms) {
-            comms.innerText = story[storyIndex];
+            comms.innerText = story[camera.currentChunk.z];
         }
     } else {
         popup.className = 'hidden'
@@ -325,24 +358,32 @@ function generateCommsText() {
 
 //#region [rgba(128, 128, 128, 0.15) ] GAME LOOP
 /*  
-* 
 * This section sets off the game loop.
-*
 */
 const clock = new THREE.Clock()
 var timeOfLastFrame = 0
 const tick = () => {
     const elapsedTime = clock.getElapsedTime()
-    generateHUDText(elapsedTime);
-    acceptPlayerInputs();
-    generateCommsText();
 
-    // Render
+    //CONTROLLER
+    acceptPlayerInputs();
+
+    //MODEL
+    worldMoves();
+
+    //VIEW
     composer.render(scene, camera)
 
-    // Call tick again on the next frame
+    //Call tick again after this
     window.requestAnimationFrame(tick)
+
+    //Generate Overlay Text
+    //generateCommsText();
+    //generateHUDText(elapsedTime);
+
+    //This will be a number of milliseconds slower than elapsed time at the beginning of next frame.
     timeOfLastFrame = elapsedTime
 }
+
 tick()
 //#endregion
