@@ -34,10 +34,13 @@ function randBetween(min, max) { // min and max included
 /*  
 * This section has NPC and STORY info
 */
-const NAMES = ["Adam", "Alex", "Aaron", "Ben", "Carl", "Dan", "David", "Edward", "Fred", "Frank", "George", "Hal", "Hank", "Ike", "John", "Jack", "Joe", "Larry", "Monte", "Matthew", "Mark", "Nathan", "Otto", "Paul", "Peter", "Roger", "Roger", "Steve", "Thomas", "Tim", "Ty", "Victor", "Walter"]
+const NAMES = ["Adam", "Alex", "Aaron", "Ben", "Carl", "Dan", "David", "Edward", "Fred", "Frank", "George", "Hal", "Hank", "Ike", "John", "Jack", "Joe",
+    "Larry", "Monte", "Matthew", "Mark", "Nathan", "Otto", "Paul", "Peter", "Roger", "Roger", "Steve", "Thomas", "Tim", "Ty", "Victor", "Walter", "Zeke"]
+
+//105 syllables, 5460 combinations at 2 sylls, 187,460 at 3 sylls, 4,780,230 at 4 sylls.
+var SYLLABLES = [] 
 const VOWELS = "aeiou".split('')
 const CONSONANTS = "bcdfghjklmnpqrstvwxyz".split('')
-var SYLLABLES = []
 for (let i = 0; i < CONSONANTS.length; i++) {
     for (let j = 0; j < VOWELS.length; j++) {
         SYLLABLES.push(CONSONANTS[i] + VOWELS[j])
@@ -360,7 +363,7 @@ window.addEventListener('keydown', (e) => {
     } else if (e.key == "r") {
         R_PRESSED = true;
     } else {
-        console.log('pressed ' + e.key)
+        //console.log('pressed ' + e.key)
     }
 })
 window.addEventListener('keyup', (e) => {
@@ -383,6 +386,12 @@ window.addEventListener('keyup', (e) => {
 window.addEventListener('keypress', (e) => {
     if (e.key == 'e') {
         console.log('use');
+    } else if (e.key == '1') {
+        console.log('switch to weapon 1')
+    } else if (e.key == '2') {
+        console.log('switch to weapon 2')
+    } else if (e.key == '3') {
+        console.log('switch to weapon 3')
     }
 })
 window.addEventListener('resize', () => {
@@ -399,17 +408,15 @@ document.body.addEventListener('click', () => {
             gunshot.play()
             camera.guns[camera.currentGun].roundsChambered--;
             rayCaster.setFromCamera(mousePosition, camera);
-            //Multiple Intersects
             const intersects = rayCaster.intersectObjects(scene.children);
             if (intersects[0].object.type == "Sprite") {
                 intersects[0].object.health--;
                 console.log(intersects);
-                scene.add(createEffectSprite('blood1', intersects[0].point.x, intersects[0].point.y, intersects[0].point.z, ));
+                scene.add(createEffectSprite('blood1', intersects[0].point.x, intersects[0].point.y, intersects[0].point.z,));
 
             } else if (intersects[0].object.type == "Mesh") {
                 console.log('kerang')
             }
-
             // for (let i = 0; i < intersects.length; i++) {
             //     if (intersects[i].object.type == "Sprite") {
             //         console.log(intersects[i].object);
