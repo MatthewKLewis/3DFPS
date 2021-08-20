@@ -69,19 +69,6 @@ const story = [
 const loader = new THREE.TextureLoader();
 loader.crossOrigin = '';
 
-function createSprite(url, x, y, z) {
-    var tempMap = new THREE.TextureLoader().load(url);
-    tempMap.flipX = false;
-    tempMap.magFilter = THREE.NearestFilter;
-    tempMap.minFilter = THREE.LinearMipMapLinearFilter;
-    var tempMat = new THREE.SpriteMaterial({ map: tempMap });
-    var tempSprite = new THREE.Sprite(tempMat);
-    tempSprite.position.x = x;
-    tempSprite.position.y = y;
-    tempSprite.position.z = z;
-    return tempSprite;
-}
-
 //Basic Colors
 var waterMap = loader.load('assets/images/water2.png')
 var cobbleMap = loader.load('assets/images/tile2.png')
@@ -241,6 +228,21 @@ bkgMusic.volume = 0.05;
 * This section sets up the camera and player.
 */
 let monsters = []
+function createSprite(url, x, y, z) {
+    var tempMap = new THREE.TextureLoader().load(url);
+    tempMap.flipX = false;
+    tempMap.magFilter = THREE.NearestFilter;
+    tempMap.minFilter = THREE.LinearMipMapLinearFilter;
+    var tempMat = new THREE.SpriteMaterial({ map: tempMap });
+    var tempSprite = new THREE.Sprite(tempMat);
+    tempSprite.position.x = x;
+    tempSprite.position.y = y;
+    tempSprite.position.z = z;
+    tempSprite.name = getName()
+    tempSprite.health = 20
+    tempSprite.status = "idle"
+    return tempSprite;
+}
 function worldMoves() {
     for (let i = 0; i < monsters.length; i++) {
         if (monsters[i].status == 'idle') {
@@ -268,8 +270,6 @@ function worldMoves() {
 //Monsters
 for (let i = 0; i < 5; i++) {
     const sampleEnemy = createSprite('assets/images/monster.png', randBetween(10, 20), 1, randBetween(10, 20));
-    sampleEnemy.status = "idle"
-    sampleEnemy.name = getName()
     monsters.push(sampleEnemy)
     scene.add(sampleEnemy);
 }
@@ -302,7 +302,7 @@ camera.currentChunk = 'Unknown'
 camera.currentTile = 0
 camera.currentGun = 0
 camera.guns = [
-    { name: 'pistol', roundsChambered: 2, roundsPerReload: 6, roundsTotal: 30, timeLastReloaded: 0, cooldown: 400 },
+    { name: 'pistol', roundsChambered: 6, roundsPerReload: 6, roundsTotal: 30, timeLastReloaded: 0, cooldown: 400 },
     { name: 'shotgun', roundsChambered: 2, roundsPerReload: 2, roundsTotal: 50, timeLastReloaded: 0, cooldown: 400 },
     { name: 'rocketLauncher', roundsChambered: 1, roundsPerReload: 1, roundsTotal: 4, timeLastReloaded: 0, cooldown: 400 },
 ]
@@ -375,12 +375,24 @@ document.body.addEventListener('click', () => {
             gunshot.play()
             camera.guns[camera.currentGun].roundsChambered--;
             rayCaster.setFromCamera(mousePosition, camera);
+            //Multiple Intersects
             const intersects = rayCaster.intersectObjects(scene.children);
-
-            for (let i = 0; i < intersects.length; i++) {
-                console.log(intersects[i].object.name);
-                scene.remove(intersects[i].object);
+            if (intersects[0].object.type == "Sprite") {
+                intersects[0].object.health--;
+                //console.log(intersects[0].object);
+                //scene.remove(intersects[0].object);
+            } else if (intersects[0].object.type == "Mesh") {
+                console.log('kerang')
             }
+
+            // for (let i = 0; i < intersects.length; i++) {
+            //     if (intersects[i].object.type == "Sprite") {
+            //         console.log(intersects[i].object);
+            //         //scene.remove(intersects[i].object);
+            //     } else if (intersects[i].object.type == "Mesh") {
+            //         console.log('kerang')
+            //     }
+            // }
         } else {
             console.log('click')
         }
@@ -543,7 +555,7 @@ const tick = () => {
     // //Generate Overlay
     generateGunImage();
     generateHUDText(elapsedTime);
-    //generateCommsText();
+    generateCommsText();
 
     //This will be a number of milliseconds slower than elapsed time at the beginning of next frame.
     timeOfLastFrame = elapsedTime
