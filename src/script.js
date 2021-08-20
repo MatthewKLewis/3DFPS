@@ -307,6 +307,10 @@ camera.guns = [
     { name: 'rocketLauncher', roundsChambered: 1, roundsPerReload: 1, roundsTotal: 4, timeLastReloaded: 0, cooldown: 400 },
 ]
 
+// Raycaster
+const rayCaster = new THREE.Raycaster();
+const mousePosition = new THREE.Vector2();
+
 // Control Properties
 let W_PRESSED = false;
 let S_PRESSED = false;
@@ -370,6 +374,13 @@ document.body.addEventListener('click', () => {
         if (camera.guns[camera.currentGun].roundsChambered > 0) {
             gunshot.play()
             camera.guns[camera.currentGun].roundsChambered--;
+            rayCaster.setFromCamera(mousePosition, camera);
+            const intersects = rayCaster.intersectObjects(scene.children);
+
+            for (let i = 0; i < intersects.length; i++) {
+                console.log(intersects[i].object.name);
+                scene.remove(intersects[i].object);
+            }
         } else {
             console.log('click')
         }
