@@ -239,11 +239,37 @@ bkgMusic.volume = 0.05;
 /*  
 * This section sets up the camera and player.
 */
-function worldMoves() { }
+let monsters = []
+function worldMoves() {
+    for (let i = 0; i < monsters.length; i++) {
+        if (monsters[i].status == 'idle') {
+            var randomChoice = randBetween(1, 4)
+            switch (randomChoice) {
+                case 1:
+                    monsters[i].position.z += .01
+                    break;
+                case 2:
+                    monsters[i].position.z -= .01
+                    break;
+                case 3:
+                    monsters[i].position.x += .01
+                    break;
+                case 4:
+                    monsters[i].position.x -= .01
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+}
 
 //Monsters
 for (let i = 0; i < 5; i++) {
     const sampleEnemy = createSprite('assets/images/monster.png', randBetween(10, 20), 1, randBetween(10, 20));
+    sampleEnemy.status = "idle"
+    sampleEnemy.name = getName()
+    monsters.push(sampleEnemy)
     scene.add(sampleEnemy);
 }
 
@@ -339,9 +365,13 @@ window.addEventListener('resize', () => {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 })
 document.body.addEventListener('click', () => {
-    if (camera.canMove && camera.guns[camera.currentGun].roundsChambered > 0) {
-        gunshot.play()
-        camera.guns[camera.currentGun].roundsChambered--;
+    if (camera.canMove) {
+        if (camera.guns[camera.currentGun].roundsChambered > 0) {
+            gunshot.play()
+            camera.guns[camera.currentGun].roundsChambered--;
+        } else {
+            console.log('click')
+        }
     }
 })
 pointerLock.addEventListener('click', () => {
@@ -442,12 +472,19 @@ composer.addPass(renderPass)
 renderer.setSize(sizes.width, sizes.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 function generateHUDText(elapsedTime) {
+    // //STATS
     stats.innerText = "FPS: " + (1 / (elapsedTime - timeOfLastFrame)).toFixed(0) + "\n"
-    stats.innerText += "Position: " + camera.position.x.toFixed(3) + " " + camera.position.y.toFixed(3) + " " + camera.position.z.toFixed(3) + " " + "\n"
+
+    //stats.innerText += "Position: " + camera.position.x.toFixed(3) + " " + camera.position.y.toFixed(3) + " " + camera.position.z.toFixed(3) + " " + "\n"
     if (camera.currentChunk) {
         stats.innerText += "Current Chunk: " + camera.currentChunk.name + " (" + camera.currentChunk.x + ", " + camera.currentChunk.z + ") \n"
         stats.innerText += "Current Tile Height: " + camera.currentTile.mesh.position.y + "\n"
     }
+    if (monsters.length > 0) {
+        stats.innerText += "First Monster: " + monsters[0].name + " (" + monsters[0].position.x.toFixed(2) + ", " + monsters[0].position.z.toFixed(2) + ") " + monsters[0].status
+    }
+
+    // //HEALTH AND AMMO
     healthAmmo.innerText = camera.health + " : " + camera.guns[camera.currentGun].roundsChambered + " / " + camera.guns[0].roundsTotal
 }
 function generateGunImage() {
