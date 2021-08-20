@@ -57,6 +57,18 @@ body
     z-index: 99;
 }
 
+#health-ammo {
+    color: white;
+    font-weight: bold;
+    font-size: 72px;
+    -webkit-text-stroke-width: 4px;
+    -webkit-text-stroke-color: black;
+    position: fixed;
+    bottom: 5%;
+    left: 72%;
+    z-index: 97;
+}
+
 #stats {
     color: white;
     position: fixed;

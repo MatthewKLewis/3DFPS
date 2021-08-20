@@ -12,10 +12,21 @@ const stats = document.querySelector('#stats')
 const popup = document.querySelector('#popup')
 const icon = document.querySelector('#icon')
 const comms = document.querySelector('#comms')
+const healthAmmo = document.querySelector('#health-ammo')
 const gunhand = document.querySelector('#gunhand')
 const next = document.querySelector('#next')
 
 const scene = new THREE.Scene()
+
+//#region [rgba(0, 126, 255, 0.15) ] PURE UTILITY
+/*  
+* This section has NPC and STORY info
+*/
+function randBetween(min, max) { // min and max included
+    return Math.floor(Math.random() * (max - min + 1) + min)
+}
+
+//#endregion
 
 // ----------------------------SET-------------------------------- //
 
@@ -23,10 +34,10 @@ const scene = new THREE.Scene()
 /*  
 * This section has NPC and STORY info
 */
+const NAMES = ["Adam", "Alex", "Aaron", "Ben", "Carl", "Dan", "David", "Edward", "Fred", "Frank", "George", "Hal", "Hank", "Ike", "John", "Jack", "Joe", "Larry", "Monte", "Matthew", "Mark", "Nathan", "Otto", "Paul", "Peter", "Roger", "Roger", "Steve", "Thomas", "Tim", "Ty", "Victor", "Walter"]
 const VOWELS = "aeiou".split('')
 const CONSONANTS = "bcdfghjklmnpqrstvwxyz".split('')
 var SYLLABLES = []
-const NAMES = ["Adam", "Alex", "Aaron", "Ben", "Carl", "Dan", "David", "Edward", "Fred", "Frank", "George", "Hal", "Hank", "Ike", "John", "Jack", "Joe", "Larry", "Monte", "Matthew", "Mark", "Nathan", "Otto", "Paul", "Peter", "Roger", "Roger", "Steve", "Thomas", "Tim", "Ty", "Victor", "Walter"]
 for (let i = 0; i < CONSONANTS.length; i++) {
     for (let j = 0; j < VOWELS.length; j++) {
         SYLLABLES.push(CONSONANTS[i] + VOWELS[j])
@@ -51,7 +62,7 @@ const story = [
 ]
 //#endregion
 
-//#region [rgba(25, 128, 25, 0.15) ] MATERIALS
+//#region [rgba(25, 255, 25, 0.15) ] MATERIALS
 /*  
 * This section sets up a map for basic color materials, as well as a few textured materials.
 */
@@ -60,8 +71,10 @@ loader.crossOrigin = '';
 
 function createSprite(url, x, y, z) {
     var tempMap = new THREE.TextureLoader().load(url);
-    var tempMat = new THREE.SpriteMaterial( { map: tempMap } );
-    var tempSprite = new THREE.Sprite( tempMat );
+    tempMap.magFilter = THREE.NearestFilter;
+    tempMap.minFilter = THREE.LinearMipMapLinearFilter;
+    var tempMat = new THREE.SpriteMaterial({ map: tempMap });
+    var tempSprite = new THREE.Sprite(tempMat);
     tempSprite.position.x = x;
     tempSprite.position.y = y;
     tempSprite.position.z = z;
@@ -78,9 +91,6 @@ const mCobble = new THREE.MeshBasicMaterial({ map: cobbleMap });
 //const mWater = new THREE.MeshLambertMaterial({ color: 'green' });
 //const mCobble = new THREE.MeshLambertMaterial({ color: 'blue' });
 
-//Monster Materials
-const sampleEnemy = createSprite('assets/images/monster.png', 10, 1, 10);
-scene.add( sampleEnemy );
 //#endregion
 
 //#region [rgba(128, 25, 25, 0.15) ] SCENERY
@@ -211,7 +221,7 @@ scene.fog = fog;
 scene.background = new THREE.Color(0x113322)
 //#endregion
 
-//#region [rgba(128, 40, 128, 0.15) ] AUDIO
+//#region [rgba(128, 40, 255, 0.15) ] AUDIO
 /*  
 * This section sets up audios to play
 */
@@ -230,6 +240,13 @@ bkgMusic.volume = 0.05;
 * This section sets up the camera and player.
 */
 function worldMoves() { }
+
+//Monsters
+for (let i = 0; i < 5; i++) {
+    const sampleEnemy = createSprite('assets/images/monster.png', randBetween(10, 20), 1, randBetween(10, 20));
+    scene.add(sampleEnemy);
+}
+
 //#endregion
 
 //#region [rgba(25, 25, 128, 0.15) ] CONTROLS (CONTROLLER)
@@ -249,16 +266,6 @@ camera.position.z = 4.5
 camera.lookAt(4.5, 1.5, 5.5)
 scene.add(camera)
 
-// // Weapon Hand
-// var gunMap = new THREE.TextureLoader().load('assets/images/pistol_1.png');
-// var gunMat = new THREE.SpriteMaterial( { map: gunMap } );
-// var gunSprite = new THREE.Sprite( gunMat );
-// gunSprite.position.x = 4.5;
-// gunSprite.position.y = 1.5;
-// gunSprite.position.z = 4.5;
-// gunSprite.parent = camera;
-// scene.add( gunSprite );
-
 // Camera Custom Properties
 camera.speed = 0.1;
 camera.health = 100;
@@ -266,6 +273,12 @@ camera.canMove = false;
 camera.ducking = false;
 camera.currentChunk = 'Unknown'
 camera.currentTile = 0
+camera.currentGun = 0
+camera.guns = [
+    { name: 'pistol', roundsChambered: 2, roundsPerReload: 6, roundsTotal: 30, timeLastReloaded: 0, cooldown: 400 },
+    { name: 'shotgun', roundsChambered: 2, roundsPerReload: 2, roundsTotal: 50, timeLastReloaded: 0, cooldown: 400 },
+    { name: 'rocketLauncher', roundsChambered: 1, roundsPerReload: 1, roundsTotal: 4, timeLastReloaded: 0, cooldown: 400 },
+]
 
 // Control Properties
 let W_PRESSED = false;
@@ -274,6 +287,7 @@ let A_PRESSED = false;
 let D_PRESSED = false;
 let E_PRESSED = false;
 let X_PRESSED = false;
+let R_PRESSED = false;
 let SPACE_PRESSED = false;
 window.addEventListener('keydown', (e) => {
     if (e.key == 'w') {
@@ -288,6 +302,8 @@ window.addEventListener('keydown', (e) => {
         SPACE_PRESSED = true;
     } else if (e.key == "x") {
         X_PRESSED = true;
+    } else if (e.key == "r") {
+        R_PRESSED = true;
     } else {
         console.log('pressed ' + e.key)
     }
@@ -305,6 +321,8 @@ window.addEventListener('keyup', (e) => {
         SPACE_PRESSED = false;
     } else if (e.key == "x") {
         X_PRESSED = false;
+    } else if (e.key == "r") {
+        R_PRESSED = false;
     }
 })
 window.addEventListener('keypress', (e) => {
@@ -321,9 +339,9 @@ window.addEventListener('resize', () => {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 })
 document.body.addEventListener('click', () => {
-    if (camera.canMove) {
-        console.log('bang')
+    if (camera.canMove && camera.guns[camera.currentGun].roundsChambered > 0) {
         gunshot.play()
+        camera.guns[camera.currentGun].roundsChambered--;
     }
 })
 pointerLock.addEventListener('click', () => {
@@ -342,7 +360,7 @@ controls.addEventListener('unlock', function () {
 // This is a pseudo-Model class, in that it is called on every frame.
 function acceptPlayerInputs() {
 
-    // Determine current chunk and tile
+    // Determine current chunk and tile, despawn faraway chunks
     var curChunkX = chunksMade.get(`${Math.floor((camera.position.x + 0.5) / CHUNK_SIDE_LENGTH)},${Math.floor((camera.position.z + 0.5) / CHUNK_SIDE_LENGTH)}`).x
     var curChunkZ = chunksMade.get(`${Math.floor((camera.position.x + 0.5) / CHUNK_SIDE_LENGTH)},${Math.floor((camera.position.z + 0.5) / CHUNK_SIDE_LENGTH)}`).z
     if (camera.currentChunk && curChunkX != camera.currentChunk.x || curChunkZ != camera.currentChunk.z) {
@@ -360,7 +378,7 @@ function acceptPlayerInputs() {
             } else {
                 camera.position.y = camera.currentChunk.tileArray[i].mesh.position.y + 1
             }
-        }       
+        }
     }
 
     if (camera.canMove) {
@@ -381,6 +399,14 @@ function acceptPlayerInputs() {
         }
         if (E_PRESSED) {
             console.log('interact')
+        }
+        if (R_PRESSED
+            && camera.guns[camera.currentGun].roundsChambered == 0
+            && camera.guns[camera.currentGun].roundsTotal > 0
+            && Date.now() > camera.guns[camera.currentGun].timeLastReloaded + camera.guns[camera.currentGun].cooldown) {
+            camera.guns[camera.currentGun].timeLastReloaded = Date.now()
+            camera.guns[camera.currentGun].roundsChambered += camera.guns[camera.currentGun].roundsPerReload;
+            camera.guns[camera.currentGun].roundsTotal -= camera.guns[camera.currentGun].roundsPerReload;
         }
         if (X_PRESSED) {
             camera.ducking = true;
@@ -422,6 +448,7 @@ function generateHUDText(elapsedTime) {
         stats.innerText += "Current Chunk: " + camera.currentChunk.name + " (" + camera.currentChunk.x + ", " + camera.currentChunk.z + ") \n"
         stats.innerText += "Current Tile Height: " + camera.currentTile.mesh.position.y + "\n"
     }
+    healthAmmo.innerText = camera.health + " : " + camera.guns[camera.currentGun].roundsChambered + " / " + camera.guns[0].roundsTotal
 }
 function generateGunImage() {
     gunhand.src = './assets/images/pistol_1.png'
