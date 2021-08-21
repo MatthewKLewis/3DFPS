@@ -32,15 +32,8 @@ hr {
 }
 
 #pointer-lock {
-    background-color: skyblue;
     position: fixed;
-    bottom: 30%;
-    left: 30%;
-    width: 40%;
-    height: 40%;
-    padding: 40px;
-    border-radius: 10px;
-    text-align: center;
+    left: 300px;
     z-index: 100;
 }
 

@@ -7,7 +7,11 @@ import { GlitchPass } from 'three/examples/jsm/postprocessing/GlitchPass.js';
 import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass.js';
 
 const canvas = document.querySelector('canvas.webgl')
+
 const pointerLock = document.querySelector('#pointer-lock')
+pointerLock.height = window.innerHeight;
+pointerLock.src = './assets/images/SplashScreen.png'
+
 const stats = document.querySelector('#stats')
 const popup = document.querySelector('#popup')
 const icon = document.querySelector('#icon')
