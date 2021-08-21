@@ -91,6 +91,21 @@ hr {
     z-index: 10;
 }
 
+.inventory {
+    background-color: #ddd;
+    position: fixed;
+    font-size: 16px;
+    display: grid;
+    grid-template-columns: 110px 620px 100px;
+    bottom: 20%;
+    left: 30%;
+    width: 40%;
+    height: 60%;
+    padding: 10px;
+    border-radius: 10px;
+    z-index: 9;
+}
+
 .icon {
     width: 100px;
     height: 100px;

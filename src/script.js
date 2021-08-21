@@ -16,6 +16,7 @@ pointerLock.src = './assets/images/SplashScreen.png'
 
 const stats = document.querySelector('#stats')
 const popup = document.querySelector('#popup')
+const inventory = document.querySelector('#inventory')
 const icon = document.querySelector('#icon')
 const comms = document.querySelector('#comms')
 const healthAmmo = document.querySelector('#health-ammo')
@@ -315,6 +316,7 @@ function createCreatureSprite(name, x, y, z) {
     tempSprite.position.x = x;
     tempSprite.position.y = y;
     tempSprite.position.z = z;
+    tempSprite.scale.set(1.2, 1.2)
     tempSprite.name = getName()
     tempSprite.health = 20
     tempSprite.status = "idle"
@@ -325,6 +327,8 @@ function createPowerupSprite(name, x, y, z) {
     tempSprite.position.x = x;
     tempSprite.position.y = y;
     tempSprite.position.z = z;
+    tempSprite.scale.set(.5, .5)
+
     return tempSprite;
 }
 function createEffectSprite(name, x, y, z) {
@@ -494,6 +498,12 @@ window.addEventListener('keypress', (e) => {
                 }
             }
         }
+    } else if (e.key == 'i') {
+        if (inventory.className == 'inventory') {
+            inventory.className = 'hidden'
+        } else {
+            inventory.className = 'inventory'
+        }
     } else if (e.key == '1') {
         camera.currentGun = 0
     } else if (e.key == '2') {
@@ -660,7 +670,7 @@ function generateGunImage() {
     gunhand.heigh = 600;
 }
 function generateCommsText() {
-    if (camera.currentChunk && camera.canMove) {
+    if (camera.currentChunk && camera.canMove && camera.position.z > 20) {
         popup.className = 'popup'
         if (icon) {
             icon.src = './assets/images/npc1.png'
@@ -698,7 +708,7 @@ const tick = () => {
     // //Generate Overlay
     generateGunImage();
     generateHUDText(elapsedTime);
-    //generateCommsText();
+    generateCommsText();
 
     //This will be a number of milliseconds slower than elapsed time at the beginning of next frame.
     timeOfLastFrame = elapsedTime
