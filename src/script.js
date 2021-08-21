@@ -420,7 +420,7 @@ window.addEventListener('keypress', (e) => {
             const intersects = rayCaster.intersectObjects(scene.children);
             if (intersects[0]) {
                 if (intersects[0].object.type == "Mesh" && intersects[0].distance < .8) {
-                    //console.log(intersects[0])
+                    console.log(intersects[0])
                 }
             }
         }
