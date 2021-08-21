@@ -1,5 +1,7 @@
 import './style.css'
 import * as THREE from 'three'
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js';
 import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockControls.js'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
@@ -118,6 +120,8 @@ for (let i = 0; i < effectSpriteURLS.length; i++) {
 /*  
 * This section sets up the objects to display in the scene.
 */
+const objLoader = new OBJLoader();
+const gltfLoader = new GLTFLoader();
 let CHUNK_SIDE_LENGTH = 10;
 var chunksMade = new Map();
 class Chunk {
@@ -160,27 +164,44 @@ function addChunk(xChunk, zChunk) {
     var xNewChunkOrigin = xChunk * CHUNK_SIDE_LENGTH;
     var zNewChunkOrigin = zChunk * CHUNK_SIDE_LENGTH;
 
-    if (chunksMade.get(`${xChunk},${zChunk}`)) {
-        var existingTileArray = chunksMade.get(`${xChunk},${zChunk}`).tileArray
-        for (let i = 0; i < existingTileArray.length; i++) {
-            scene.add(existingTileArray[i].mesh)
-        }
+    if (Math.random() < .2 && xChunk != 0 && zChunk != 0) {
+        //LOAD CUSTOM CHUNK
+        // //GLBs
+        gltfLoader.load( 'assets/objects/sampleChunk2.glb', function ( gltf ) {
+            var obj = gltf.scene
+            obj.position.x = xNewChunkOrigin + (CHUNK_SIDE_LENGTH / 2) - .5;
+            obj.position.y = .2;
+            obj.position.z = zNewChunkOrigin + (CHUNK_SIDE_LENGTH / 2) - .5;
+            console.log(obj)
+            scene.add( obj );
+            chunksMade.set(`${xChunk},${zChunk}`, new Chunk(xChunk, zChunk, []));
+        }, undefined, function ( error ) {
+            console.error( error );
+        } );
     } else {
-        var floorIndex = generateFloorChunkIndex();
-        var floorGameObjectArray = []
-
-        for (let i = 0; i < floorIndex.length; i++) {
-            if (floorIndex[i] == 1) {
-                var tempFloorTile = new Tile((i % CHUNK_SIDE_LENGTH) + xNewChunkOrigin, (Math.floor(i / CHUNK_SIDE_LENGTH)) + zNewChunkOrigin, Math.random() / 10, i, 'ground', 0, 0)
-                floorGameObjectArray.push(tempFloorTile);
-                scene.add(tempFloorTile.mesh)
-            } else {
-                var tempFloorTile = new Tile((i % CHUNK_SIDE_LENGTH) + xNewChunkOrigin, (Math.floor(i / CHUNK_SIDE_LENGTH)) + zNewChunkOrigin, -0.1, i, 'water', 0, 0)
-                floorGameObjectArray.push(tempFloorTile);
-                scene.add(tempFloorTile.mesh)
+        //LOAD TILED CHUNK
+        if (chunksMade.get(`${xChunk},${zChunk}`)) {
+            var existingTileArray = chunksMade.get(`${xChunk},${zChunk}`).tileArray || []
+            for (let i = 0; i < existingTileArray.length; i++) {
+                scene.add(existingTileArray[i].mesh)
             }
+        } else {
+            var floorIndex = generateFloorChunkIndex();
+            var floorGameObjectArray = []
+
+            for (let i = 0; i < floorIndex.length; i++) {
+                if (floorIndex[i] == 1) {
+                    var tempFloorTile = new Tile((i % CHUNK_SIDE_LENGTH) + xNewChunkOrigin, (Math.floor(i / CHUNK_SIDE_LENGTH)) + zNewChunkOrigin, Math.random() / 10, i, 'ground', 0, 0)
+                    floorGameObjectArray.push(tempFloorTile);
+                    scene.add(tempFloorTile.mesh)
+                } else {
+                    var tempFloorTile = new Tile((i % CHUNK_SIDE_LENGTH) + xNewChunkOrigin, (Math.floor(i / CHUNK_SIDE_LENGTH)) + zNewChunkOrigin, -0.1, i, 'water', 0, 0)
+                    floorGameObjectArray.push(tempFloorTile);
+                    scene.add(tempFloorTile.mesh)
+                }
+            }
+            chunksMade.set(`${xChunk},${zChunk}`, new Chunk(xChunk, zChunk, floorGameObjectArray));
         }
-        chunksMade.set(`${xChunk},${zChunk}`, new Chunk(xChunk, zChunk, floorGameObjectArray));
     }
 
 
@@ -234,7 +255,7 @@ for (let i = -1; i <= 1; i++) {
 }
 
 //Add light
-let directionalLight = new THREE.AmbientLight(0xffffff, 0.5)
+let directionalLight = new THREE.AmbientLight(0xffffff, 0.4)
 directionalLight.position.x = 5;
 directionalLight.position.z = 6;
 directionalLight.position.y = 3;
@@ -452,15 +473,18 @@ document.body.addEventListener('click', () => {
             rayCaster.setFromCamera(mousePosition, camera);
             camera.guns[camera.currentGun].timeLastFired = Date.now()
             const intersects = rayCaster.intersectObjects(scene.children);
+            //console.log(intersects)
             if (intersects[0]) {
                 if (intersects[0].object.type == "Sprite") {
+                    //console.log(intersects[0])
                     intersects[0].object.health -= camera.guns[camera.currentGun].damage;
                     var blood = createEffectSprite('blood1', intersects[0].point.x, intersects[0].point.y, intersects[0].point.z)
-                    console.log(intersects[0])
                     sprites.push(blood)
                     scene.add(blood);
                 } else if (intersects[0].object.type == "Mesh") {
                     console.log('kerang')
+                } else {
+                    console.log(intersects[0])
                 }
             }
         } else {
@@ -470,7 +494,7 @@ document.body.addEventListener('click', () => {
 })
 pointerLock.addEventListener('click', () => {
     controls.lock()
-    bkgMusic.play()
+    //bkgMusic.play()
 })
 controls.addEventListener('lock', function () {
     pointerLock.style.display = 'none';
@@ -491,18 +515,21 @@ function acceptPlayerInputs() {
         addAndRemoveNeighborChunks(curChunkX, curChunkZ, camera.currentChunk.x, camera.currentChunk.z);
     }
     camera.currentChunk = chunksMade.get(`${Math.floor((camera.position.x + 0.5) / CHUNK_SIDE_LENGTH)},${Math.floor((camera.position.z + 0.5) / CHUNK_SIDE_LENGTH)}`)
-    camera.currentTile = [camera.currentChunk.tileArray[0].mesh.position.x, camera.currentChunk.tileArray[0].mesh.position.z]
 
     // Postion camera based on height and ducking
-    for (let i = 0; i < camera.currentChunk.tileArray.length; i++) {
-        if (camera.currentChunk.tileArray[i].mesh.position.x == Math.floor(camera.position.x + .5) && camera.currentChunk.tileArray[i].mesh.position.z == Math.floor(camera.position.z + .5)) {
-            camera.currentTile = camera.currentChunk.tileArray[i]
-            if (!camera.ducking) {
-                camera.position.y = camera.currentChunk.tileArray[i].mesh.position.y + 1
-            } else {
-                camera.position.y = camera.currentChunk.tileArray[i].mesh.position.y + .6
+    if (camera.currentChunk.tileArray.length > 0) {
+        for (let i = 0; i < camera.currentChunk.tileArray.length; i++) {
+            if (camera.currentChunk.tileArray[i].mesh.position.x == Math.floor(camera.position.x + .5) && camera.currentChunk.tileArray[i].mesh.position.z == Math.floor(camera.position.z + .5)) {
+                camera.currentTile = camera.currentChunk.tileArray[i]
+                if (!camera.ducking) {
+                    camera.position.y = camera.currentChunk.tileArray[i].mesh.position.y + 1
+                } else {
+                    camera.position.y = camera.currentChunk.tileArray[i].mesh.position.y + .6
+                }
             }
         }
+    } else {
+        camera.position.y = 1.2
     }
 
     if (camera.canMove) {
@@ -548,8 +575,7 @@ function acceptPlayerInputs() {
 const renderer = new THREE.WebGLRenderer({
     canvas: canvas
 })
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap
+renderer.outputEncoding = THREE.sRGBEncoding;
 
 const renderPass = new RenderPass(scene, camera)
 // const glitchPass = new BokehPass(scene, camera, {
@@ -630,6 +656,5 @@ const tick = () => {
     //This will be a number of milliseconds slower than elapsed time at the beginning of next frame.
     timeOfLastFrame = elapsedTime
 }
-
 tick()
 //#endregion
