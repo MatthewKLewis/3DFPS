@@ -167,12 +167,12 @@ function addChunk(xChunk, zChunk) {
     if (Math.random() < .2 && xChunk != 0 && zChunk != 0) {
         //LOAD CUSTOM CHUNK
         // //GLBs
-        gltfLoader.load( 'assets/objects/sampleChunk2.glb', function ( gltf ) {
+        gltfLoader.load( 'assets/objects/sampleChunk4.glb', function ( gltf ) {
             var obj = gltf.scene
             obj.position.x = xNewChunkOrigin + (CHUNK_SIDE_LENGTH / 2) - .5;
             obj.position.y = .2;
             obj.position.z = zNewChunkOrigin + (CHUNK_SIDE_LENGTH / 2) - .5;
-            console.log(obj)
+            //console.log(obj)
             scene.add( obj );
             chunksMade.set(`${xChunk},${zChunk}`, new Chunk(xChunk, zChunk, []));
         }, undefined, function ( error ) {
@@ -191,7 +191,7 @@ function addChunk(xChunk, zChunk) {
 
             for (let i = 0; i < floorIndex.length; i++) {
                 if (floorIndex[i] == 1) {
-                    var tempFloorTile = new Tile((i % CHUNK_SIDE_LENGTH) + xNewChunkOrigin, (Math.floor(i / CHUNK_SIDE_LENGTH)) + zNewChunkOrigin, Math.random() / 10, i, 'ground', 0, 0)
+                    var tempFloorTile = new Tile((i % CHUNK_SIDE_LENGTH) + xNewChunkOrigin, (Math.floor(i / CHUNK_SIDE_LENGTH)) + zNewChunkOrigin, Math.random(), i, 'ground', 0, 0)
                     floorGameObjectArray.push(tempFloorTile);
                     scene.add(tempFloorTile.mesh)
                 } else {
@@ -319,25 +319,43 @@ function createEffectSprite(name, x, y, z) {
     return tempSprite;
 }
 function worldMoves() {
-    for (let i = 0; i < monsters.length; i++) {
-        if (monsters[i].status == 'idle') {
-            var randomChoice = randBetween(1, 4)
+
+    //monster decisions
+    if (Math.random() > .95) {
+        for (let i = 0; i < monsters.length; i++) {
+            var randomChoice = randBetween(1, 5)
             switch (randomChoice) {
                 case 1:
-                    monsters[i].position.z += .01
+                    monsters[i].status = "move forward"
                     break;
                 case 2:
-                    monsters[i].position.z -= .01
+                    monsters[i].status = "move backward"
                     break;
                 case 3:
-                    monsters[i].position.x += .01
+                    monsters[i].status = "move left"
                     break;
                 case 4:
-                    monsters[i].position.x -= .01
+                    monsters[i].status = "move right"
                     break;
-                default:
+                case 5:
+                    monsters[i].status = "idle"
                     break;
             }
+        }
+    }
+    //monster actions
+
+    for (let i = 0; i < monsters.length; i++) {
+        if (monsters[i].status == 'idle') {
+            //do nothing
+        } else if (monsters[i].status == 'move forward') {
+            monsters[i].position.z += .01;
+        } else if (monsters[i].status == 'move backward') {
+            monsters[i].position.z -= .01;
+        } else if (monsters[i].status == 'move left') {
+            monsters[i].position.x += .01;
+        } else if (monsters[i].status == 'move right') {
+            monsters[i].position.x -= .01;
         }
     }
     for (let i = 0; i < sprites.length; i++) {
@@ -376,7 +394,8 @@ camera.lookAt(4.5, 1.2, 5.5)
 scene.add(camera)
 
 // Camera Custom Properties
-camera.speed = 0.04;
+camera.speed = 0.07;
+camera.heightOffset = 1;
 camera.health = 100;
 camera.canMove = false;
 camera.ducking = false;
@@ -521,10 +540,12 @@ function acceptPlayerInputs() {
         for (let i = 0; i < camera.currentChunk.tileArray.length; i++) {
             if (camera.currentChunk.tileArray[i].mesh.position.x == Math.floor(camera.position.x + .5) && camera.currentChunk.tileArray[i].mesh.position.z == Math.floor(camera.position.z + .5)) {
                 camera.currentTile = camera.currentChunk.tileArray[i]
-                if (!camera.ducking) {
-                    camera.position.y = camera.currentChunk.tileArray[i].mesh.position.y + 1
-                } else {
-                    camera.position.y = camera.currentChunk.tileArray[i].mesh.position.y + .6
+                if (camera.position.y < camera.currentChunk.tileArray[i].mesh.position.y + camera.heightOffset) {
+                    console.log('step up')
+                    camera.position.y = camera.currentChunk.tileArray[i].mesh.position.y + camera.heightOffset
+                } else if (camera.position.y > camera.currentChunk.tileArray[i].mesh.position.y + camera.heightOffset) {
+                    console.log('step down')
+                    camera.position.y = camera.currentChunk.tileArray[i].mesh.position.y + camera.heightOffset
                 }
             }
         }
@@ -560,7 +581,7 @@ function acceptPlayerInputs() {
             camera.guns[camera.currentGun].roundsTotal -= camera.guns[camera.currentGun].roundsPerReload;
         }
         if (X_PRESSED) {
-            camera.ducking = true;
+            //camera.ducking = true;
         } else {
             camera.ducking = false;
         }
