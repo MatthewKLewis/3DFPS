@@ -103,6 +103,17 @@ for (let i = 0; i < monsterSpriteURLS.length; i++) {
     monsterSpriteMaterials.set(monsterSpriteURLS[i], tempMat);
 }
 
+//Powerup Sprites
+let powerupSpriteMaterials = new Map()
+let powerupSpriteURLS = ['ammo']
+for (let i = 0; i < powerupSpriteURLS.length; i++) {
+    var tempMap = new THREE.TextureLoader().load(`assets/images/${powerupSpriteURLS[i]}.png`);
+    tempMap.magFilter = THREE.NearestFilter;
+    tempMap.minFilter = THREE.LinearMipMapLinearFilter;
+    var tempMat = new THREE.SpriteMaterial({ map: tempMap });
+    powerupSpriteMaterials.set(powerupSpriteURLS[i], tempMat);
+}
+
 //Effect Sprites
 let effectSpriteMaterials = new Map()
 let effectSpriteURLS = ['blood1']
@@ -191,7 +202,7 @@ function addChunk(xChunk, zChunk) {
 
             for (let i = 0; i < floorIndex.length; i++) {
                 if (floorIndex[i] == 1) {
-                    var tempFloorTile = new Tile((i % CHUNK_SIDE_LENGTH) + xNewChunkOrigin, (Math.floor(i / CHUNK_SIDE_LENGTH)) + zNewChunkOrigin, Math.random(), i, 'ground', 0, 0)
+                    var tempFloorTile = new Tile((i % CHUNK_SIDE_LENGTH) + xNewChunkOrigin, (Math.floor(i / CHUNK_SIDE_LENGTH)) + zNewChunkOrigin, Math.random() / 10, i, 'ground', 0, 0)
                     floorGameObjectArray.push(tempFloorTile);
                     scene.add(tempFloorTile.mesh)
                 } else {
@@ -298,6 +309,7 @@ bkgMusic.volume = 0.1;
 */
 let monsters = []
 let sprites = []
+let powerups = []
 function createCreatureSprite(name, x, y, z) {
     var tempSprite = new THREE.Sprite(monsterSpriteMaterials.get(name));
     tempSprite.position.x = x;
@@ -306,6 +318,13 @@ function createCreatureSprite(name, x, y, z) {
     tempSprite.name = getName()
     tempSprite.health = 20
     tempSprite.status = "idle"
+    return tempSprite;
+}
+function createPowerupSprite(name, x, y, z) {
+    var tempSprite = new THREE.Sprite(powerupSpriteMaterials.get(name));
+    tempSprite.position.x = x;
+    tempSprite.position.y = y;
+    tempSprite.position.z = z;
     return tempSprite;
 }
 function createEffectSprite(name, x, y, z) {
@@ -372,6 +391,13 @@ for (let i = 0; i < 5; i++) {
     const sampleEnemy = createCreatureSprite('monster', randBetween(10, 20), 1, randBetween(10, 20));
     monsters.push(sampleEnemy)
     scene.add(sampleEnemy)
+}
+
+//Powerups
+for (let i = 0; i < 5; i++) {
+    const samplePowerup = createPowerupSprite('ammo', randBetween(-10, -20), 1, randBetween(-10, -20));
+    powerups.push(samplePowerup)
+    scene.add(samplePowerup)
 }
 
 //#endregion
@@ -541,10 +567,10 @@ function acceptPlayerInputs() {
             if (camera.currentChunk.tileArray[i].mesh.position.x == Math.floor(camera.position.x + .5) && camera.currentChunk.tileArray[i].mesh.position.z == Math.floor(camera.position.z + .5)) {
                 camera.currentTile = camera.currentChunk.tileArray[i]
                 if (camera.position.y < camera.currentChunk.tileArray[i].mesh.position.y + camera.heightOffset) {
-                    console.log('step up')
+                    //console.log('step up')
                     camera.position.y = camera.currentChunk.tileArray[i].mesh.position.y + camera.heightOffset
                 } else if (camera.position.y > camera.currentChunk.tileArray[i].mesh.position.y + camera.heightOffset) {
-                    console.log('step down')
+                    //console.log('step down')
                     camera.position.y = camera.currentChunk.tileArray[i].mesh.position.y + camera.heightOffset
                 }
             }
