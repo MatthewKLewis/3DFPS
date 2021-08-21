@@ -261,7 +261,7 @@ const gunclick = new Audio('./assets/audios/gunclick.mp3')
 const bkgMusic = new Audio('./assets/audios/Flossed In Paradise - In The No.mp3')
 gunshot.volume = 0.25;
 gunclick.volume = 0.25;
-bkgMusic.volume = 0.05;
+bkgMusic.volume = 0.1;
 
 //#endregion
 
@@ -442,7 +442,7 @@ window.addEventListener('resize', () => {
 })
 document.body.addEventListener('click', () => {
     if (camera.canMove && Date.now() > camera.guns[camera.currentGun].timeLastFired + camera.guns[camera.currentGun].cooldown) {
-        if (camera.guns[camera.currentGun].roundsChambered > 0) {
+        if (camera.guns[camera.currentGun].roundsChambered > 0) {   
             gunshot.play()
             camera.guns[camera.currentGun].roundsChambered--;
             rayCaster.setFromCamera(mousePosition, camera);
@@ -452,6 +452,7 @@ document.body.addEventListener('click', () => {
                 if (intersects[0].object.type == "Sprite") {
                     intersects[0].object.health -= camera.guns[camera.currentGun].damage;
                     var blood = createEffectSprite('blood1', intersects[0].point.x, intersects[0].point.y, intersects[0].point.z)
+                    console.log(intersects[0])
                     sprites.push(blood)
                     scene.add(blood);
                 } else if (intersects[0].object.type == "Mesh") {
@@ -465,7 +466,7 @@ document.body.addEventListener('click', () => {
 })
 pointerLock.addEventListener('click', () => {
     controls.lock()
-    //bkgMusic.play()
+    bkgMusic.play()
 })
 controls.addEventListener('lock', function () {
     pointerLock.style.display = 'none';
