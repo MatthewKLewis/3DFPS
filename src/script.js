@@ -86,12 +86,15 @@ const mRed = new THREE.MeshBasicMaterial({color: new THREE.Color('red')})
 //Textured Materials
 var waterMap = loader.load('assets/images/water2.png')
 var cobbleMap = loader.load('assets/images/tile2.png')
+var wallMap = loader.load('assets/images/wall2.png')
 waterMap.magFilter = THREE.NearestFilter;
 cobbleMap.magFilter = THREE.NearestFilter;
+wallMap.magFilter = THREE.NearestFilter;
 const mWater = new THREE.MeshBasicMaterial({ map: waterMap });
 const mCobble = new THREE.MeshBasicMaterial({ map: cobbleMap });
+const mWall = new THREE.MeshBasicMaterial({ map: wallMap });
 
-//Gun "Sprites"
+//Gun "Sprites" - really images
 let gunSpriteURLS = ['./assets/images/pistol_1.png', './assets/images/shotgun_1.png', './assets/images/launcher_1.png']
 
 //Monster Sprites
@@ -156,7 +159,7 @@ class Tile {
             this.mesh.flavor = type;
         } else if (type == 'wall') {
             this.geometry = new THREE.BoxGeometry(1, 1, 1)
-            this.mesh = new THREE.Mesh(this.geometry, mCobble)
+            this.mesh = new THREE.Mesh(this.geometry, mWall)
             this.mesh.flavor = type;
         } else if (type == 'water') {
             this.geometry = new THREE.BoxGeometry(1, 1, 1)
@@ -428,19 +431,19 @@ const sizes = {
 // Camera Built-in Properties
 const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
 const controls = new PointerLockControls(camera, document.body);
-camera.position.x = 4.5
+camera.position.x = 0
 camera.position.y = 1.0
-camera.position.z = 4.5
+camera.position.z = 0
 scene.add(camera)
 
 // Camera Custom Properties
 camera.forward = new THREE.Vector3(0, 0, -1);
+camera.left = new THREE.Vector3(1, 0, 0)
 camera.up = new THREE.Vector3(0,1,0);
 camera.speed = 0.07;
 camera.heightOffset = 1;
 camera.health = 100;
 camera.canMove = false;
-camera.ducking = false;
 camera.currentChunk = 'Unknown'
 camera.currentTile = 0
 camera.currentGun = 0
@@ -459,10 +462,22 @@ const fwdCaster = new THREE.Raycaster();
 const bckCaster = new THREE.Raycaster();
 const lftCaster = new THREE.Raycaster();
 const rigCaster = new THREE.Raycaster();
+
 fwdCaster.camera = camera;
+fwdCaster.ray.origin = new Vector3(0,1,0)
+fwdCaster.ray.direction = new Vector3(0,1,-1)
+
 bckCaster.camera = camera;
+bckCaster.ray.origin = new Vector3(0,1,0)
+bckCaster.ray.direction = new Vector3(0,1,1)
+
 lftCaster.camera = camera;
+lftCaster.ray.origin = new Vector3(0,1,0)
+lftCaster.ray.direction = new Vector3(1,1,0)
+
 rigCaster.camera = camera;
+rigCaster.ray.origin = new Vector3(0,1,0)
+rigCaster.ray.direction = new Vector3(-1,1,0)
 
 // Control Properties
 let W_PRESSED = false;
@@ -470,7 +485,6 @@ let S_PRESSED = false;
 let A_PRESSED = false;
 let D_PRESSED = false;
 let E_PRESSED = false;
-let X_PRESSED = false;
 let R_PRESSED = false;
 let SPACE_PRESSED = false;
 window.addEventListener('keydown', (e) => {
@@ -583,35 +597,51 @@ controls.addEventListener('unlock', function () {
 });
 
 // This is a pseudo-Model class, in that it is called every frame.
+var ALLOW_FWD = true;
+var ALLOW_BACK = true;
+var ALLOW_LEFT = true;
+var ALLOW_RIGHT = true;
+let BARRIER_DISTANCE = 0.5;
 function acceptPlayerInputs() {
-
-    camera.forward = camera.getWorldDirection(new Vector3(0, 0, -1))
-    
-    var ALLOW_FWD = true;
-    var ALLOW_BACK = true;
-    var ALLOW_LEFT = true;
-    var ALLOW_RIGHT = true;
-
+    camera.getWorldDirection(camera.forward)
+    camera.getWorldDirection(camera.left);
+    camera.left.applyAxisAngle(camera.up, Math.PI / 2)
+    ALLOW_FWD = true;
+    ALLOW_BACK = true;
+    ALLOW_LEFT = true;
+    ALLOW_RIGHT = true;
     // //Determine forward collision objects
     fwdCaster.set(camera.position, camera.forward);
     var fwdIntersects = fwdCaster.intersectObjects(scene.children);
     if (fwdIntersects.length > 0) {
-        if (fwdIntersects[0].distance < 0.6 && fwdIntersects[0].object.flavor == "wall") {
-            //console.log(fwdIntersects[0])
+        if (fwdIntersects[0].distance < BARRIER_DISTANCE && fwdIntersects[0].object.flavor == "wall") {
             ALLOW_FWD = false;
         }
     }
-
     // //Determine backward collision objects
-    bckCaster.set(camera.position, new Vector3(camera.forward.x, camera.forward.y, -camera.forward.z));
+    bckCaster.set(camera.position, new Vector3(-camera.forward.x, camera.forward.y, -camera.forward.z));
     var bckIntersects = bckCaster.intersectObjects(scene.children);
     if (bckIntersects.length > 0) {
-        if (bckIntersects[0].distance < 0.6 && bckIntersects[0].object.flavor == "wall") {
-            console.log(bckIntersects[0])
+        if (bckIntersects[0].distance < BARRIER_DISTANCE && bckIntersects[0].object.flavor == "wall") {
             ALLOW_BACK = false;
         }
     }
-
+    // //Determine backward collision objects
+    lftCaster.set(camera.position, camera.left);
+    var lftIntersects = lftCaster.intersectObjects(scene.children);
+    if (lftIntersects.length > 0) {
+        if (lftIntersects[0].distance < BARRIER_DISTANCE && lftIntersects[0].object.flavor == "wall") {
+            ALLOW_LEFT = false;
+        }
+    }
+    // //Determine backward collision objects
+    rigCaster.set(camera.position, new Vector3(-camera.left.x, camera.left.y, -camera.left.z));
+    var rigIntersects = rigCaster.intersectObjects(scene.children);
+    if (rigIntersects.length > 0) {
+        if (rigIntersects[0].distance < BARRIER_DISTANCE && rigIntersects[0].object.flavor == "wall") {
+            ALLOW_RIGHT = false;
+        }
+    }
     // Determine current chunk and tile, despawn faraway chunks
     var curChunkX = chunksMade.get(`${Math.floor((camera.position.x + 0.5) / CHUNK_SIDE_LENGTH)},${Math.floor((camera.position.z + 0.5) / CHUNK_SIDE_LENGTH)}`).x
     var curChunkZ = chunksMade.get(`${Math.floor((camera.position.x + 0.5) / CHUNK_SIDE_LENGTH)},${Math.floor((camera.position.z + 0.5) / CHUNK_SIDE_LENGTH)}`).z
@@ -619,18 +649,17 @@ function acceptPlayerInputs() {
         addAndRemoveNeighborChunks(curChunkX, curChunkZ, camera.currentChunk.x, camera.currentChunk.z);
     }
     camera.currentChunk = chunksMade.get(`${Math.floor((camera.position.x + 0.5) / CHUNK_SIDE_LENGTH)},${Math.floor((camera.position.z + 0.5) / CHUNK_SIDE_LENGTH)}`)
-
     // Postion camera based on height and ducking
     if (camera.currentChunk.tileArray.length > 0) {
         for (let i = 0; i < camera.currentChunk.tileArray.length; i++) {
             if (camera.currentChunk.tileArray[i].mesh.position.x == Math.floor(camera.position.x + .5) && camera.currentChunk.tileArray[i].mesh.position.z == Math.floor(camera.position.z + .5)) {
                 camera.currentTile = camera.currentChunk.tileArray[i]
-                if (camera.position.y < camera.currentChunk.tileArray[i].mesh.position.y + camera.heightOffset) {
+                if (camera.position.y < camera.currentTile.mesh.position.y + camera.heightOffset) {
                     //console.log('step up')
-                    camera.position.y = camera.currentChunk.tileArray[i].mesh.position.y + camera.heightOffset
-                } else if (camera.position.y > camera.currentChunk.tileArray[i].mesh.position.y + camera.heightOffset) {
+                    camera.position.y = camera.currentTile.mesh.position.y + camera.heightOffset
+                } else if (camera.position.y > camera.currentTile.mesh.position.y + camera.heightOffset) {
                     //console.log('step down')
-                    camera.position.y = camera.currentChunk.tileArray[i].mesh.position.y + camera.heightOffset
+                    camera.position.y = camera.currentTile.mesh.position.y + camera.heightOffset
                 }
             }
         }
@@ -665,11 +694,6 @@ function acceptPlayerInputs() {
             camera.guns[camera.currentGun].roundsChambered += camera.guns[camera.currentGun].roundsPerReload;
             camera.guns[camera.currentGun].roundsTotal -= camera.guns[camera.currentGun].roundsPerReload;
         }
-        if (X_PRESSED) {
-            //camera.ducking = true;
-        } else {
-            camera.ducking = false;
-        }
     }
 }
 //#endregion
@@ -702,10 +726,10 @@ function generateHUDText(elapsedTime) {
     stats.innerText = "FPS: " + (1 / (elapsedTime - timeOfLastFrame)).toFixed(0) + "\n"
     stats.innerText += "Position: " + camera.position.x.toFixed(3) + " " + camera.position.y.toFixed(3) + " " + camera.position.z.toFixed(3) + "\n"
     stats.innerText += "Vector Fwd: " + camera.forward.x.toFixed(3) + ", " + camera.forward.y.toFixed(3) + ", " + camera.forward.z.toFixed(3) + "\n"
-    //stats.innerText += "Vector Lef: " + camera.left.x.toFixed(3) + ", " + camera.left.y.toFixed(3) + ", " + camera.left.z.toFixed(3) + "\n"
 
     if (camera.currentChunk) {
         stats.innerText += "Current Chunk: " + camera.currentChunk.name + " (" + camera.currentChunk.x + ", " + camera.currentChunk.z + ") \n"
+        stats.innerText += "Current Tile Height: " + camera.currentTile.index + "\n"
         stats.innerText += "Current Tile Height: " + camera.currentTile.mesh.position.y + "\n"
     }
     if (monsters.length > 0) {
