@@ -87,6 +87,7 @@ const mRed = new THREE.MeshBasicMaterial({color: new THREE.Color('red')})
 var waterMap = loader.load('assets/images/water2.png')
 var cobbleMap = loader.load('assets/images/tile2.png')
 var wallMap = loader.load('assets/images/wall2.png')
+var skyMap = loader.load('assets/images/sky.png')
 waterMap.magFilter = THREE.NearestFilter;
 cobbleMap.magFilter = THREE.NearestFilter;
 wallMap.magFilter = THREE.NearestFilter;
@@ -288,10 +289,10 @@ directionalLight.position.y = 3;
 scene.add(directionalLight)
 
 //Add Fog
-let fog = new THREE.FogExp2(0x113322, 0.1)
+let fog = new THREE.FogExp2(0x6699cc, 0.1)
 scene.fog = fog;
-scene.background = wallMap;
-//scene.background = new THREE.Color(0x113322)
+//scene.background = skyMap;
+scene.background = new THREE.Color(0x6699cc)
 
 //Add a button
 let buttonGeo = new THREE.BoxBufferGeometry(.2, .2, .2)
@@ -746,13 +747,13 @@ function generateGunImage() {
     gunhand.heigh = 600;
 }
 function generateCommsText() {
-    if (camera.currentChunk && camera.canMove && camera.position.z > 20) {
+    if (camera.currentChunk && camera.canMove && Math.abs(camera.position.z) > 5) {
         popup.className = 'popup'
         if (icon) {
             icon.src = './assets/images/npc1.png'
         }
         if (comms) {
-            comms.innerText = story[camera.currentChunk.z];
+            comms.innerText = story[Math.min(Math.abs(camera.currentChunk.z), story.length - 1)];
         }
     } else {
         popup.className = 'hidden'
