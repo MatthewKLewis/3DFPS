@@ -7,6 +7,7 @@ import { PointerLockControls } from 'three/examples/jsm/controls/PointerLockCont
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js';
 import { GlitchPass } from 'three/examples/jsm/postprocessing/GlitchPass.js';
 import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass.js';
+import { Vector3 } from 'three';
 
 const canvas = document.querySelector('canvas.webgl')
 
@@ -448,6 +449,7 @@ camera.guns = [
 
 // Raycaster
 const rayCaster = new THREE.Raycaster();
+rayCaster.camera = camera;
 const mousePosition = new THREE.Vector2();
 
 // Control Properties
@@ -533,8 +535,8 @@ document.body.addEventListener('click', () => {
         if (camera.guns[camera.currentGun].roundsChambered > 0) {   
             gunshot.play()
             camera.guns[camera.currentGun].roundsChambered--;
-            rayCaster.setFromCamera(mousePosition, camera);
             camera.guns[camera.currentGun].timeLastFired = Date.now()
+            rayCaster.setFromCamera(mousePosition, camera);
             const intersects = rayCaster.intersectObjects(scene.children);
             //console.log(intersects)
             if (intersects[0]) {
@@ -568,8 +570,24 @@ controls.addEventListener('unlock', function () {
     camera.canMove = false;
 });
 
-// This is a pseudo-Model class, in that it is called on every frame.
+// This is a pseudo-Model class, in that it is called every frame.
 function acceptPlayerInputs() {
+
+    var ALLOW_FWD = true;
+    var ALLOW_RIGHT = true;
+    var ALLOW_LEFT = true;
+    var ALLOW_BACK = true;
+
+    // //Determine close collision objects
+    rayCaster.set(camera.position, new Vector3(camera.position.x, camera.position.y, camera.position.z - 1).normalize());
+    var fwdIntersects = rayCaster.intersectObjects(scene.children);
+
+    if (fwdIntersects.length > 0) {
+        if (fwdIntersects[0].distance < 0.6) {
+            console.log(fwdIntersects[0])
+            ALLOW_FWD = false;
+        }
+    }
 
     // Determine current chunk and tile, despawn faraway chunks
     var curChunkX = chunksMade.get(`${Math.floor((camera.position.x + 0.5) / CHUNK_SIDE_LENGTH)},${Math.floor((camera.position.z + 0.5) / CHUNK_SIDE_LENGTH)}`).x
@@ -598,7 +616,7 @@ function acceptPlayerInputs() {
     }
 
     if (camera.canMove) {
-        if (W_PRESSED) {
+        if (W_PRESSED && ALLOW_FWD) {
             controls.moveForward(camera.speed);
         }
         if (S_PRESSED) {
