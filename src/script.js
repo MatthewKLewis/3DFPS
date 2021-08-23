@@ -142,7 +142,6 @@ class Chunk {
         this.z = z
         this.tileArray = tileArray
         this.name = getAbjadWord(4);
-        //this.name = getName()
     }
 }
 class Tile {
@@ -154,6 +153,9 @@ class Tile {
         if (type == 'ground') {
             this.geometry = new THREE.BoxBufferGeometry(1, 1, 1)
             this.mesh = new THREE.Mesh(this.geometry, mCobble)
+        } else if (type == 'wall') {
+            this.geometry = new THREE.BoxGeometry(1, 1, 1)
+            this.mesh = new THREE.Mesh(this.geometry, mRed)
         } else if (type == 'water') {
             this.geometry = new THREE.BoxGeometry(1, 1, 1)
             this.mesh = new THREE.Mesh(this.geometry, mWater)
@@ -166,7 +168,7 @@ class Tile {
 function generateFloorChunkIndex() {
     var tempIndex = []
     for (let i = 0; i < (CHUNK_SIDE_LENGTH * CHUNK_SIDE_LENGTH); i++) {
-        tempIndex.push(Math.random() > .3 ? 1 : 0)
+        tempIndex.push(Math.random() > .3 ? 1 : 2)
     }
     tempIndex.reverse()
     return tempIndex;
@@ -176,7 +178,7 @@ function addChunk(xChunk, zChunk) {
     var xNewChunkOrigin = xChunk * CHUNK_SIDE_LENGTH;
     var zNewChunkOrigin = zChunk * CHUNK_SIDE_LENGTH;
 
-    if (Math.random() < .2 && xChunk != 0 && zChunk != 0) {
+    if (Math.random() > 1 && xChunk != 0 && zChunk != 0) { // Value > 1 means never
         //LOAD CUSTOM CHUNK
         // //GLBs
         gltfLoader.load( 'assets/objects/sampleChunk4.glb', function ( gltf ) {
@@ -202,21 +204,27 @@ function addChunk(xChunk, zChunk) {
             var floorGameObjectArray = []
 
             for (let i = 0; i < floorIndex.length; i++) {
-                if (floorIndex[i] == 1) {
-                    var tempFloorTile = new Tile((i % CHUNK_SIDE_LENGTH) + xNewChunkOrigin, (Math.floor(i / CHUNK_SIDE_LENGTH)) + zNewChunkOrigin, Math.random() / 10, i, 'ground', 0, 0)
-                    floorGameObjectArray.push(tempFloorTile);
-                    scene.add(tempFloorTile.mesh)
-                } else {
-                    var tempFloorTile = new Tile((i % CHUNK_SIDE_LENGTH) + xNewChunkOrigin, (Math.floor(i / CHUNK_SIDE_LENGTH)) + zNewChunkOrigin, -0.1, i, 'water', 0, 0)
-                    floorGameObjectArray.push(tempFloorTile);
-                    scene.add(tempFloorTile.mesh)
+                switch (floorIndex[i]) {
+                    case 1:
+                        var tempFloorTile = new Tile((i % CHUNK_SIDE_LENGTH) + xNewChunkOrigin, (Math.floor(i / CHUNK_SIDE_LENGTH)) + zNewChunkOrigin, Math.random() / 10, i, 'ground', 0, 0)
+                        floorGameObjectArray.push(tempFloorTile);
+                        scene.add(tempFloorTile.mesh)
+                        break;
+                    case 2:
+                        var tempFloorTile = new Tile((i % CHUNK_SIDE_LENGTH) + xNewChunkOrigin, (Math.floor(i / CHUNK_SIDE_LENGTH)) + zNewChunkOrigin, 1, i, 'wall', 0, 0)
+                        floorGameObjectArray.push(tempFloorTile);
+                        scene.add(tempFloorTile.mesh)
+                        break;
+                    default:
+                        var tempFloorTile = new Tile((i % CHUNK_SIDE_LENGTH) + xNewChunkOrigin, (Math.floor(i / CHUNK_SIDE_LENGTH)) + zNewChunkOrigin, -0.1, i, 'water', 0, 0)
+                        floorGameObjectArray.push(tempFloorTile);
+                        scene.add(tempFloorTile.mesh)
+                        break;
                 }
             }
             chunksMade.set(`${xChunk},${zChunk}`, new Chunk(xChunk, zChunk, floorGameObjectArray));
         }
     }
-
-
 }
 function removeChunk(xChunk, zChunk) {
     var chunkToDelete = chunksMade.get(`${xChunk},${zChunk}`);
