@@ -148,18 +148,20 @@ class Chunk {
 class Tile {
     constructor(x, z, y, i, type, xChunk, zChunk) {
         this.index = i
-        this.type = type
         this.xChunk = xChunk
         this.zChunk = zChunk
         if (type == 'ground') {
             this.geometry = new THREE.BoxBufferGeometry(1, 1, 1)
             this.mesh = new THREE.Mesh(this.geometry, mCobble)
+            this.mesh.flavor = type;
         } else if (type == 'wall') {
             this.geometry = new THREE.BoxGeometry(1, 1, 1)
-            this.mesh = new THREE.Mesh(this.geometry, mRed)
+            this.mesh = new THREE.Mesh(this.geometry, mCobble)
+            this.mesh.flavor = type;
         } else if (type == 'water') {
             this.geometry = new THREE.BoxGeometry(1, 1, 1)
             this.mesh = new THREE.Mesh(this.geometry, mWater)
+            this.mesh.flavor = type;
         }
         this.mesh.position.x = x;
         this.mesh.position.z = z;
@@ -169,7 +171,7 @@ class Tile {
 function generateFloorChunkIndex() {
     var tempIndex = []
     for (let i = 0; i < (CHUNK_SIDE_LENGTH * CHUNK_SIDE_LENGTH); i++) {
-        tempIndex.push(Math.random() > .3 ? 1 : 2)
+        tempIndex.push(Math.random() > .1 ? 1 : 2)
     }
     tempIndex.reverse()
     return tempIndex;
@@ -429,10 +431,11 @@ const controls = new PointerLockControls(camera, document.body);
 camera.position.x = 4.5
 camera.position.y = 1.0
 camera.position.z = 4.5
-camera.lookAt(4.5, 1.2, 5.5)
 scene.add(camera)
 
 // Camera Custom Properties
+camera.forward = new THREE.Vector3(0, 0, -1);
+camera.up = new THREE.Vector3(0,1,0);
 camera.speed = 0.07;
 camera.heightOffset = 1;
 camera.health = 100;
@@ -449,8 +452,17 @@ camera.guns = [
 
 // Raycaster
 const rayCaster = new THREE.Raycaster();
-rayCaster.camera = camera;
 const mousePosition = new THREE.Vector2();
+
+// Collisioncasters
+const fwdCaster = new THREE.Raycaster();
+const bckCaster = new THREE.Raycaster();
+const lftCaster = new THREE.Raycaster();
+const rigCaster = new THREE.Raycaster();
+fwdCaster.camera = camera;
+bckCaster.camera = camera;
+lftCaster.camera = camera;
+rigCaster.camera = camera;
 
 // Control Properties
 let W_PRESSED = false;
@@ -573,19 +585,30 @@ controls.addEventListener('unlock', function () {
 // This is a pseudo-Model class, in that it is called every frame.
 function acceptPlayerInputs() {
 
+    camera.forward = camera.getWorldDirection(new Vector3(0, 0, -1))
+    
     var ALLOW_FWD = true;
-    var ALLOW_RIGHT = true;
-    var ALLOW_LEFT = true;
     var ALLOW_BACK = true;
+    var ALLOW_LEFT = true;
+    var ALLOW_RIGHT = true;
 
-    // //Determine close collision objects
-    rayCaster.set(camera.position, new Vector3(camera.position.x, camera.position.y, camera.position.z - 1).normalize());
-    var fwdIntersects = rayCaster.intersectObjects(scene.children);
-
+    // //Determine forward collision objects
+    fwdCaster.set(camera.position, camera.forward);
+    var fwdIntersects = fwdCaster.intersectObjects(scene.children);
     if (fwdIntersects.length > 0) {
-        if (fwdIntersects[0].distance < 0.6) {
-            console.log(fwdIntersects[0])
+        if (fwdIntersects[0].distance < 0.6 && fwdIntersects[0].object.flavor == "wall") {
+            //console.log(fwdIntersects[0])
             ALLOW_FWD = false;
+        }
+    }
+
+    // //Determine backward collision objects
+    bckCaster.set(camera.position, new Vector3(camera.forward.x, camera.forward.y, -camera.forward.z));
+    var bckIntersects = bckCaster.intersectObjects(scene.children);
+    if (bckIntersects.length > 0) {
+        if (bckIntersects[0].distance < 0.6 && bckIntersects[0].object.flavor == "wall") {
+            console.log(bckIntersects[0])
+            ALLOW_BACK = false;
         }
     }
 
@@ -619,13 +642,13 @@ function acceptPlayerInputs() {
         if (W_PRESSED && ALLOW_FWD) {
             controls.moveForward(camera.speed);
         }
-        if (S_PRESSED) {
+        if (S_PRESSED && ALLOW_BACK) {
             controls.moveForward(-camera.speed);
         }
-        if (A_PRESSED) {
+        if (A_PRESSED && ALLOW_LEFT) {
             controls.moveRight(-camera.speed);
         }
-        if (D_PRESSED) {
+        if (D_PRESSED && ALLOW_RIGHT) {
             controls.moveRight(camera.speed);
         }
         if (SPACE_PRESSED) {
@@ -677,8 +700,10 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 function generateHUDText(elapsedTime) {
     // //STATS
     stats.innerText = "FPS: " + (1 / (elapsedTime - timeOfLastFrame)).toFixed(0) + "\n"
+    stats.innerText += "Position: " + camera.position.x.toFixed(3) + " " + camera.position.y.toFixed(3) + " " + camera.position.z.toFixed(3) + "\n"
+    stats.innerText += "Vector Fwd: " + camera.forward.x.toFixed(3) + ", " + camera.forward.y.toFixed(3) + ", " + camera.forward.z.toFixed(3) + "\n"
+    //stats.innerText += "Vector Lef: " + camera.left.x.toFixed(3) + ", " + camera.left.y.toFixed(3) + ", " + camera.left.z.toFixed(3) + "\n"
 
-    //stats.innerText += "Position: " + camera.position.x.toFixed(3) + " " + camera.position.y.toFixed(3) + " " + camera.position.z.toFixed(3) + " " + "\n"
     if (camera.currentChunk) {
         stats.innerText += "Current Chunk: " + camera.currentChunk.name + " (" + camera.currentChunk.x + ", " + camera.currentChunk.z + ") \n"
         stats.innerText += "Current Tile Height: " + camera.currentTile.mesh.position.y + "\n"
@@ -723,7 +748,7 @@ const tick = () => {
     acceptPlayerInputs();
 
     //MODEL
-    worldMoves();
+    //worldMoves();
 
     //VIEW
     composer.render(scene, camera)
@@ -734,7 +759,7 @@ const tick = () => {
     // //Generate Overlay
     generateGunImage();
     generateHUDText(elapsedTime);
-    generateCommsText();
+    //generateCommsText();
 
     //This will be a number of milliseconds slower than elapsed time at the beginning of next frame.
     timeOfLastFrame = elapsedTime
