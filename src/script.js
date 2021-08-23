@@ -174,7 +174,7 @@ class Tile {
 function generateFloorChunkIndex() {
     var tempIndex = []
     for (let i = 0; i < (CHUNK_SIDE_LENGTH * CHUNK_SIDE_LENGTH); i++) {
-        tempIndex.push(Math.random() > .1 ? 1 : 2)
+        tempIndex.push(Math.random() > 0.05 ? 1 : 2)
     }
     tempIndex.reverse()
     return tempIndex;
@@ -290,7 +290,8 @@ scene.add(directionalLight)
 //Add Fog
 let fog = new THREE.FogExp2(0x113322, 0.1)
 scene.fog = fog;
-scene.background = new THREE.Color(0x113322)
+scene.background = wallMap;
+//scene.background = new THREE.Color(0x113322)
 
 //Add a button
 let buttonGeo = new THREE.BoxBufferGeometry(.2, .2, .2)
@@ -772,7 +773,7 @@ const tick = () => {
     acceptPlayerInputs();
 
     //MODEL
-    //worldMoves();
+    worldMoves();
 
     //VIEW
     composer.render(scene, camera)
@@ -783,7 +784,7 @@ const tick = () => {
     // //Generate Overlay
     generateGunImage();
     generateHUDText(elapsedTime);
-    //generateCommsText();
+    generateCommsText();
 
     //This will be a number of milliseconds slower than elapsed time at the beginning of next frame.
     timeOfLastFrame = elapsedTime
