@@ -181,11 +181,9 @@ function generateFloorChunkIndex() {
     return tempIndex;
 }
 function addChunk(xChunk, zChunk) {
-
     var xNewChunkOrigin = xChunk * CHUNK_SIDE_LENGTH;
     var zNewChunkOrigin = zChunk * CHUNK_SIDE_LENGTH;
-
-    if (Math.random() > 1 && xChunk != 0 && zChunk != 0) { // Value > 1 means never
+    if (Math.random() > 0.90 && xChunk != 0 && zChunk != 0) { // Value > 1 means never
         //LOAD CUSTOM CHUNK
         // //GLBs
         gltfLoader.load( 'assets/objects/sampleChunk4.glb', function ( gltf ) {
@@ -346,7 +344,6 @@ function createPowerupSprite(name, x, y, z) {
     tempSprite.position.y = y;
     tempSprite.position.z = z;
     tempSprite.scale.set(.5, .5)
-
     return tempSprite;
 }
 function createEffectSprite(name, x, y, z) {
@@ -360,7 +357,6 @@ function createEffectSprite(name, x, y, z) {
     return tempSprite;
 }
 function worldMoves() {
-
     //monster decisions
     if (Math.random() > .95) {
         for (let i = 0; i < monsters.length; i++) {
@@ -714,7 +710,7 @@ function acceptPlayerInputs() {
 const renderer = new THREE.WebGLRenderer({
     canvas: canvas
 })
-renderer.outputEncoding = THREE.sRGBEncoding;
+//renderer.outputEncoding = THREE.sRGBEncoding;
 
 const renderPass = new RenderPass(scene, camera)
 // const glitchPass = new BokehPass(scene, camera, {
@@ -735,7 +731,6 @@ function generateHUDText(elapsedTime) {
     stats.innerText = "FPS: " + (1 / (elapsedTime - timeOfLastFrame)).toFixed(0) + "\n"
     stats.innerText += "Position: " + camera.position.x.toFixed(3) + " " + camera.position.y.toFixed(3) + " " + camera.position.z.toFixed(3) + "\n"
     stats.innerText += "Vector Fwd: " + camera.forward.x.toFixed(3) + ", " + camera.forward.y.toFixed(3) + ", " + camera.forward.z.toFixed(3) + "\n"
-
     if (camera.currentChunk) {
         stats.innerText += "Current Chunk: " + camera.currentChunk.name + " (" + camera.currentChunk.x + ", " + camera.currentChunk.z + ") \n"
         stats.innerText += "Current Tile Height: " + camera.currentTile.index + "\n"
