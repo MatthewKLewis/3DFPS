@@ -329,6 +329,8 @@ let sprites = []
 let powerups = []
 function createCreatureSprite(name, x, y, z) {
     var tempSprite = new THREE.Sprite(monsterSpriteMaterials.get(name));
+    tempSprite.rayCaster = new THREE.Raycaster(new Vector3(x,y,z), new Vector3(x, y, z - 1));
+    tempSprite.rayCaster.camera = new THREE.PerspectiveCamera();
     tempSprite.position.x = x;
     tempSprite.position.y = y;
     tempSprite.position.z = z;
@@ -385,8 +387,13 @@ function worldMoves() {
     //monster actions
 
     for (let i = 0; i < monsters.length; i++) {
+
+        monsters[i].lookAt(camera.position)
+
         if (monsters[i].status == 'idle') {
-            //do nothing
+            if (monsters[i].position.distanceTo(camera.position) < 8 && Math.random() > .95) {
+                console.log('ATTACK FROM ' + monsters[i].name)
+            }
         } else if (monsters[i].status == 'move forward') {
             monsters[i].position.z += .01;
         } else if (monsters[i].status == 'move backward') {
@@ -569,7 +576,7 @@ document.body.addEventListener('click', () => {
             //console.log(intersects)
             if (intersects[0]) {
                 if (intersects[0].object.type == "Sprite") {
-                    //console.log(intersects[0])
+                    console.log(intersects[0])
                     intersects[0].object.health -= camera.guns[camera.currentGun].damage;
                     var blood = createEffectSprite('blood1', intersects[0].point.x, intersects[0].point.y, intersects[0].point.z)
                     sprites.push(blood)
@@ -790,5 +797,6 @@ const tick = () => {
     //This will be a number of milliseconds slower than elapsed time at the beginning of next frame.
     timeOfLastFrame = elapsedTime
 }
+console.log(monsters[0])
 tick()
 //#endregion
