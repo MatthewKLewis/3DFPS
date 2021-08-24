@@ -323,9 +323,11 @@ scene.background = new THREE.Color(0x6699cc)
 
 const gunshot = new Audio('./assets/audios/gunshot_short.mp3')
 const gunclick = new Audio('./assets/audios/gunclick.mp3')
+const ricochet = new Audio('./assets/audios/ricochet.mp3')
 const bkgMusic = new Audio('./assets/audios/Flossed In Paradise - In The No.mp3')
 gunshot.volume = 0.25;
 gunclick.volume = 0.25;
+ricochet.volume = 0.3
 bkgMusic.volume = 0.1;
 
 //#endregion
@@ -490,7 +492,8 @@ document.body.addEventListener('click', () => {
                     sprites.push(blood)
                     scene.add(blood);
                 } else if (intersects[0].object.type == "Mesh") {
-                    console.log('kerang')
+                    //console.log('kerang')
+                    ricochet.play()
                 } else {
                     console.log(intersects[0])
                 }
