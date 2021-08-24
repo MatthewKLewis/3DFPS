@@ -22,7 +22,7 @@ const icon = document.querySelector('#icon')
 const comms = document.querySelector('#comms')
 const healthAmmo = document.querySelector('#health-ammo')
 const gunhand = document.querySelector('#gunhand')
-const next = document.querySelector('#next')
+const youDied = document.querySelector('#you-died')
 
 const scene = new THREE.Scene()
 
@@ -292,14 +292,6 @@ scene.fog = fog;
 //scene.background = skyMap;
 scene.background = new THREE.Color(0x6699cc)
 
-//Add a button
-let buttonGeo = new THREE.BoxBufferGeometry(.2, .2, .2)
-let buttonMesh = new THREE.Mesh(buttonGeo, mRed)
-buttonMesh.position.x = 4.5
-buttonMesh.position.y = 1
-buttonMesh.position.z = 8
-scene.add(buttonMesh);
-
 //#endregion
 
 //#region [rgba(128, 40, 255, 0.15) ] AUDIO
@@ -325,6 +317,16 @@ bkgMusic.volume = 0.1;
 let monsters = []
 let sprites = []
 let powerups = []
+function createButton(x, y, z, callback) {
+    var buttonGeo = new THREE.BoxBufferGeometry(.2, .2, .2)
+    var buttonMesh = new THREE.Mesh(buttonGeo, mRed)
+    buttonMesh.position.x = x
+    buttonMesh.position.y = y
+    buttonMesh.position.z = z
+    buttonMesh.callback = callback;
+    buttonMesh.flavor = "button"
+    return buttonMesh;
+}
 function createCreatureSprite(name, x, y, z) {
     var tempSprite = new THREE.Sprite(monsterSpriteMaterials.get(name));
     tempSprite.rayCaster = new THREE.Raycaster(new Vector3(x,y,z), new Vector3(x, y, z - 1));
@@ -356,6 +358,7 @@ function createEffectSprite(name, x, y, z) {
     tempSprite.lifeSpan = 20
     return tempSprite;
 }
+
 function worldMoves() {
     //monster decisions
     if (Math.random() > .95) {
@@ -418,6 +421,15 @@ for (let i = 0; i < 5; i++) {
     powerups.push(samplePowerup)
     scene.add(samplePowerup)
 }
+
+//Add a button
+scene.add(createButton(0, 1, 4, ()=>{
+    camera.health -= 20;
+}));
+
+scene.add(createButton(0, 1, -4, ()=>{
+    console.log('message')
+}));
 
 //#endregion
 
@@ -530,8 +542,9 @@ window.addEventListener('keypress', (e) => {
             rayCaster.setFromCamera(mousePosition, camera);
             const intersects = rayCaster.intersectObjects(scene.children);
             if (intersects[0]) {
-                if (intersects[0].object.type == "Mesh" && intersects[0].distance < .8) {
-                    console.log(intersects[0])
+                if (intersects[0].object.flavor == "button" && intersects[0].distance < .8) {
+                    //console.log(intersects[0])
+                    intersects[0].object.callback()
                 }
             }
         }
@@ -608,6 +621,13 @@ var ALLOW_LEFT = true;
 var ALLOW_RIGHT = true;
 let BARRIER_DISTANCE = 0.5;
 function acceptPlayerInputs() {
+
+    if (camera.health <= 0) {
+        camera.canMove = false;
+        canvas.classList.add('dead')
+        youDied.classList.add('died')
+    }
+
     camera.getWorldDirection(camera.forward)
     camera.getWorldDirection(camera.left);
     camera.left.applyAxisAngle(camera.up, Math.PI / 2)
