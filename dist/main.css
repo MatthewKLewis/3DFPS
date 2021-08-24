@@ -45,6 +45,31 @@ hr {
     filter: blur(4px);
 }
 
+.reload-animation {
+    animation-duration: 750ms;
+    animation-name: reload;
+}
+
+.fire-animation {
+    animation-duration: 200ms;
+    animation-name: fire;
+}
+
+@keyframes reload {
+    from { bottom: 0; }
+    50% { bottom: -500px; }
+    to { bottom: 0; }
+}
+
+@keyframes fire {
+    from { bottom: 0; }
+    50% { 
+        bottom: -25px;
+        transform: rotate(2deg);
+    }
+    to { bottom: 0; }
+}
+
 #crosshair {
     color: white;
     text-align: center;
@@ -91,6 +116,21 @@ hr {
     z-index: 10;
 }
 
+.died {
+    text-align: center;
+    text-emphasis: 600;
+    color: white;
+    -webkit-text-stroke-width: 1px;
+    -webkit-text-stroke-color: black;
+    position: fixed;
+    font-size: 72px;
+    bottom: 30%;
+    left: 30%;
+    width: 40%;
+    height: 40%;
+    z-index: 20;
+}
+
 .inventory {
     background-color: #ddd;
     position: fixed;
@@ -114,6 +154,7 @@ hr {
 .comms {
     display: inline;
     color: white;
+    width: 80%;
 }
 
 .next {
@@ -125,6 +166,21 @@ hr {
 
 .hidden {
     display: none;
+}
+
+.dead {
+    animation-duration: 200ms;
+    animation-fill-mode: forwards;
+    animation-name: dead;
+}
+
+@keyframes dead {
+    from {
+        filter: blur(0px);
+    }
+    to {
+        filter: blur(20px);
+    }
 }
 
 /*# sourceMappingURL=main.css.map*/
