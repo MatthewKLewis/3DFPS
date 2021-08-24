@@ -45,6 +45,31 @@ hr {
     filter: blur(4px);
 }
 
+.reload-animation {
+    animation-duration: 750ms;
+    animation-name: reload;
+}
+
+.fire-animation {
+    animation-duration: 200ms;
+    animation-name: fire;
+}
+
+@keyframes reload {
+    from { bottom: 0; }
+    50% { bottom: -500px; }
+    to { bottom: 0; }
+}
+
+@keyframes fire {
+    from { bottom: 0; }
+    50% { 
+        bottom: -25px;
+        transform: rotate(2deg);
+    }
+    to { bottom: 0; }
+}
+
 #crosshair {
     color: white;
     text-align: center;

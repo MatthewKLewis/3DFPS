@@ -381,11 +381,7 @@ function worldMoves() {
         }
     }
     //monster actions
-
     for (let i = 0; i < monsters.length; i++) {
-
-        monsters[i].lookAt(camera.position)
-
         if (monsters[i].status == 'idle') {
             if (monsters[i].position.distanceTo(camera.position) < 8 && Math.random() > .95) {
                 console.log('ATTACK FROM ' + monsters[i].name)
@@ -567,6 +563,10 @@ document.body.addEventListener('click', () => {
             gunshot.play()
             camera.guns[camera.currentGun].roundsChambered--;
             camera.guns[camera.currentGun].timeLastFired = Date.now()
+
+            gunhand.classList.add('fire-animation')
+            setTimeout(()=>{gunhand.classList.remove('fire-animation')}, 250)
+
             rayCaster.setFromCamera(mousePosition, camera);
             const intersects = rayCaster.intersectObjects(scene.children);
             //console.log(intersects)
@@ -695,6 +695,10 @@ function acceptPlayerInputs() {
             && camera.guns[camera.currentGun].roundsChambered == 0
             && camera.guns[camera.currentGun].roundsTotal > 0
             && Date.now() > camera.guns[camera.currentGun].timeLastReloaded + camera.guns[camera.currentGun].cooldown) {
+
+            gunhand.classList.add('reload-animation');
+            setTimeout(()=>{gunhand.classList.remove('reload-animation')}, 1000)
+
             camera.guns[camera.currentGun].timeLastReloaded = Date.now()
             camera.guns[camera.currentGun].roundsChambered += camera.guns[camera.currentGun].roundsPerReload;
             camera.guns[camera.currentGun].roundsTotal -= camera.guns[camera.currentGun].roundsPerReload;
