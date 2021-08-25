@@ -362,9 +362,9 @@ camera.currentChunk = 'Unknown'
 camera.currentTile = 0
 camera.currentGun = 0
 camera.guns = [
-    { name: 'pistol', damage: 1, roundsChambered: 6, roundsPerReload: 6, roundsTotal: 30, timeLastReloaded: 0, timeLastFired: 0, cooldown: 600 },
-    { name: 'shotgun', damage: 5, roundsChambered: 2, roundsPerReload: 2, roundsTotal: 50, timeLastReloaded: 0, timeLastFired: 0, cooldown: 600 },
-    { name: 'rocketLauncher', damage: 20, roundsChambered: 1, roundsPerReload: 1, roundsTotal: 4, timeLastReloaded: 0, timeLastFired: 0, cooldown: 600 },
+    { name: 'pistol', damage: 5, roundsChambered: 6, roundsPerReload: 6, roundsTotal: 30, timeLastReloaded: 0, timeLastFired: 0, cooldown: 600 },
+    { name: 'shotgun', damage: 10, roundsChambered: 2, roundsPerReload: 2, roundsTotal: 50, timeLastReloaded: 0, timeLastFired: 0, cooldown: 600 },
+    { name: 'rocketLauncher', damage: 40, roundsChambered: 1, roundsPerReload: 1, roundsTotal: 4, timeLastReloaded: 0, timeLastFired: 0, cooldown: 600 },
 ]
 
 // Raycaster
@@ -701,6 +701,11 @@ function worldMoves() {
     }
     //monster actions
     for (let i = 0; i < monsters.length; i++) {
+        if (monsters[i].health <= 0) {
+            scene.remove(monsters[i])
+            monsters.splice(i,1);
+        }
+
         if (monsters[i].status == 'idle') {
             if (monsters[i].position.distanceTo(camera.position) < 8 && Math.random() > .95) {
                 //console.log('ATTACK FROM ' + monsters[i].name)
